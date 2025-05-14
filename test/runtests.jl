@@ -2,5 +2,7 @@ using SelfPropelledVoronoi
 using Test
 
 @testset "SelfPropelledVoronoi.jl" begin
-    # Write your tests here.
+
+    @test SelfPropelledVoronoi.test_force(1) == 2
+
 end
