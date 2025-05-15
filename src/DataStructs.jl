@@ -28,7 +28,7 @@ end
 
 struct Box
     box_sizes::SVector{2, Float64}
-    Box(Lx::Float64, Ly::Float64) = new(SVector{2, Float64}(x, y))
+    Box(Lx::Float64, Ly::Float64) = new(SVector{2, Float64}(Lx, Ly))
 end
 
 struct ArrayStruct
