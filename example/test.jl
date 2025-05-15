@@ -7,7 +7,7 @@ N = 1000
 Lx = 10.0
 Ly = 10.0
 dt = 0.01
-Nsteps = 10000
+Nsteps = 1000
 
 # Create a box
 box = SimulationBox(Lx, Ly)
