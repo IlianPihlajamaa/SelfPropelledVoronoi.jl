@@ -53,7 +53,7 @@ mutable struct NeighborList{Nmax}
     NeighborList(N, max_neigbors) = new{max_neigbors}(
         [MutableSmallVector{max_neigbors, Int64}() for _ in 1:N],
         [MutableSmallVector{max_neigbors, Int64}() for _ in 1:N],
-        [SVector{2, Float64}(undef) for _ in 1:N]
+        [zero(SVector{2, Float64}) for _ in 1:N]
     )
 end
 

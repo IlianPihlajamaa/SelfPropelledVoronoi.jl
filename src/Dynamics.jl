@@ -7,7 +7,7 @@ function run_simulation!(parameters, arrays, output)
     while true
 
         # invoke callback
-        parameters.callback(step, parameters, arrays, output)
+        parameters.callback(parameters, arrays, output)
 
         do_time_step!(parameters, arrays, output)
 
@@ -19,9 +19,9 @@ function run_simulation!(parameters, arrays, output)
         end
 
         # Check if the simulation should be tesselated
-        if !verify_tesselation(parameters, arrays, output)
-            voronoi_tesselation!(parameters, arrays, output)
-        end
+        # if !verify_tesselation(parameters, arrays, output)
+        #     voronoi_tesselation!(parameters, arrays, output)
+        # end
 
         # Check if the simulation should be stopped
         step = step + 1

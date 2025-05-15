@@ -1,5 +1,6 @@
 [deps]
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+Quickhull = "baca2653-9c88-49d2-a488-12dbf25fc4fb"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 SelfPropelledVoronoi = "4dfba7fc-e1fc-4b7f-b937-41f797185184"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
