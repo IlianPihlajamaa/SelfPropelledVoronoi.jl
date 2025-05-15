@@ -8,16 +8,18 @@ for file in [
     "DataStructs.jl", 
     "AuxiliaryFunctions.jl",
     "InitialConfiguration.jl", 
-    "Dynamics.jl", 
     "Dump.jl", 
     "Forces.jl",
-    "Tesselation.jl"
+    "Tesselation.jl",
+    "Dynamics.jl", 
+
     ] 
     
     include(file) 
 end
 
 export SimulationBox, ParameterStruct, VoronoiCells, ArrayStruct, Output, DumpInfo
+export run_simulation!
 
 
 end

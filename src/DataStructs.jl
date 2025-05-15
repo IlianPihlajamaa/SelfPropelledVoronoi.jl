@@ -6,12 +6,14 @@ struct VoronoiCells <: Particles
     K_P::Vector{Float64}
     K_A::Vector{Float64}
     active_force_strengths::Vector{Float64}
-    VoronoiCells(p0s, A0s, KPs, KAs, f0s) = new(
+    rotational_diffusion_constants::Vector{Float64}
+    VoronoiCells(p0s, A0s, KPs, KAs, f0s, Drs) = new(
         p0s,
         A0s,
         KPs,
         KAs,
-        f0s
+        f0s,
+        Drs
     )
 end
 
@@ -23,14 +25,22 @@ end
 
 struct ArrayStruct{NB}
     positions::Vector{SVector{2, Float64}}
+    old_positions::Vector{SVector{2, Float64}}
     forces::Vector{SVector{2, Float64}}
+    old_forces::Vector{SVector{2, Float64}}
     orientations::Vector{Float64}
+    old_orientations::Vector{Float64}
     areas::Vector{Float64}
     perimeters::Vector{Float64}
+    random_forces::Vector{Float64}
     neighborlist::NB
     ArrayStruct(N, max_neigbors) = new{NeighborList{max_neigbors}}(
         zeros(SVector{2, Float64}, N),
         zeros(SVector{2, Float64}, N),
+        zeros(SVector{2, Float64}, N),
+        zeros(SVector{2, Float64}, N),
+        zeros(Float64, N),
+        zeros(Float64, N),
         zeros(Float64, N),
         zeros(Float64, N),
         zeros(Float64, N),
@@ -100,6 +110,7 @@ struct ParameterStruct{P<:Particles, CB}
     N_steps::Int
     kBT::Float64
     frictionconstant::Float64
+    verbose::Bool
     box::SimulationBox
     particles::P
     dump_info::DumpInfo

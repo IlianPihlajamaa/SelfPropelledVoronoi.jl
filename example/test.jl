@@ -7,7 +7,7 @@ N = 1000
 Lx = 10.0
 Ly = 10.0
 dt = 0.01
-Nsteps = 1000
+Nsteps = 10000
 
 # Create a box
 box = SimulationBox(Lx, Ly)
@@ -17,12 +17,14 @@ target_areas = ones(N)
 K_P = ones(N)
 K_A = ones(N)
 active_force_strengths = ones(N)
+D_r = ones(N)
 voronoi_cells = VoronoiCells(
     target_perimeters,
     target_areas,
     K_P,
     K_A,
-    active_force_strengths
+    active_force_strengths,
+    D_r
 )
 
 # Create a ParameterStruct object
@@ -40,7 +42,7 @@ dump_info = DumpInfo(
 )
 
 function visualize(parameters, arrays, output)
-    if !(step % 100 == 0)
+    if !(output.steps_done % 100 == 0)
         return 
     end
     # visualize the initial configuration
@@ -53,7 +55,7 @@ function visualize(parameters, arrays, output)
     display(fig)
 end
 
-
+verbose=true
 callback = visualize 
 parameter_struct = ParameterStruct(
     N,
@@ -61,6 +63,7 @@ parameter_struct = ParameterStruct(
     Nsteps,
     kBT,
     frictionconstant,
+    verbose,
     box,
     voronoi_cells,
     dump_info,
@@ -77,7 +80,8 @@ arrays.orientations .= 2π*rand(Float64, N)
 # Create an Output object
 output = Output()
 
-
+# Run the simulation
+run_simulation!(parameter_struct, arrays, output)
 
 
 
