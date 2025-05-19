@@ -14,7 +14,6 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 [compat]
 HDF5 = "0.17.2"
 LoopVectorization = "0.12.172"
-Quickhull = "0.2.1"
 Random = "1.11.0"
 SmallCollections = "0.4.0"
 StaticArrays = "1.9.13"

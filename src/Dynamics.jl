@@ -1,11 +1,67 @@
-function compute_forces!(parameters, arrays, output)
-    # Compute forces on particles
-    # This function should be implemented based on the specific force model used in the simulation
-    # For example, it could compute forces based on the positions of particles and their interactions
-    # For now, we will just set forces to zero
+function compute_forces_SPV!(parameters, arrays, output)
+    # do lennard jones for now
+    println("Computing forces ", output.steps_done)
+    @time tri = Quickhull.delaunay(arrays.positions)
+    @time vor_vertices = Quickhull.voronoi_centers(tri)
+    @time vor_edges = Quickhull.voronoi_edges(tri)
+    @time vor_edge_points = [(vor_vertices[i], vor_vertices[j]) for (i, j) in vor_edges]
+
+    # for every particle, find all the corresponding voronoi edges
+
+    # To do this, we loop over all facets of the triangulation
+    # and for each facet, we find the corresponding voronoi vertices by getting the circumcenter
+    # of the triangle formed by the three vertices of the facet. We save the voronoi vertex in the list and 
+    # save also the indices of the vertices of the voronoi cell in a list for all the particles
+
+    facets = Quickhull.facets(tri)
+
+    voronoi_cells = [Int[] for _ in 1:parameters.N]
+    voronoi_edges = [Int[] for _ in 1:parameters.N]
+
+
+
+
     N = parameters.N
     for i in 1:N
-        arrays.forces[i] = SVector(0.0, 0.0)
+        Fi = SVector(0.0, 0.0)
+
+        for j in 1:N
+            if i == j
+                continue
+            end
+            rij = compute_pair_distance_vector(arrays.positions[i], arrays.positions[j], parameters.box.box_sizes)
+            r = sqrt(sum(rij.*rij))
+            if r < 2^(1/6)
+                # Gaussian core
+                f = -2 * rij  * exp(-r^2)
+                Fi += f
+            end
+        end
+        arrays.forces[i] =  Fi
+    end
+    return
+end
+
+
+function compute_forces_GCM!(parameters, arrays, output)
+    # do lennard jones for now
+    N = parameters.N
+    for i in 1:N
+        Fi = SVector(0.0, 0.0)
+
+        for j in 1:N
+            if i == j
+                continue
+            end
+            rij = compute_pair_distance_vector(arrays.positions[i], arrays.positions[j], parameters.box.box_sizes)
+            r = sqrt(sum(rij.*rij))
+            if r < 2^(1/6)
+                # Gaussian core
+                f = -2 * rij  * exp(-r^2)
+                Fi += f
+            end
+        end
+        arrays.forces[i] =  Fi
     end
     return
 end
@@ -34,7 +90,7 @@ function do_time_step_Euler_Murayama(parameters, arrays, output)
     old_orientations = arrays.old_orientations
     box_sizes = parameters.box.box_sizes
     # compute forces
-    compute_forces!(parameters, arrays, output)
+    compute_forces_SPV!(parameters, arrays, output)
     # update orientations
     for particle in 1:parameters.N
         old_orientation = orientations[particle]
@@ -74,7 +130,7 @@ function do_time_step_Euler_Heun!(parameters, arrays, output)
 
     box_sizes = parameters.box.box_sizes
     # compute forces
-    compute_forces!(parameters, arrays, output)
+    compute_forces_SPV!(parameters, arrays, output)
 
     # update orientations
     for particle in 1:parameters.N
@@ -94,7 +150,8 @@ function do_time_step_Euler_Heun!(parameters, arrays, output)
         new_position = positions[particle] + dt * (forces[particle] * mobility + active_force_strengths[particle] * old_orientation_vector)
         positions[particle] = apply_periodic_boundary_conditions(new_position, box_sizes)
     end
-    compute_forces!(parameters, arrays, output)
+    old_forces .= forces
+    compute_forces_SPV!(parameters, arrays, output)
 
     # corrector step
     for particle in 1:parameters.N
@@ -117,7 +174,7 @@ function do_time_step_Euler_Heun!(parameters, arrays, output)
 
 
     # update orientations
-    old_forces .= forces
+
     old_positions .= positions
     old_orientations .= orientations
 

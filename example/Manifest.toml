@@ -1239,8 +1239,8 @@ version = "2.11.2"
     Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 
 [[deps.Quickhull]]
-deps = ["Combinatorics", "GeometryBasics", "LinearAlgebra", "MacroTools", "MappedArrays", "MultiFloats", "Polynomials", "SIMD", "StaticArrays"]
-git-tree-sha1 = "a12364bfa3a8dbdeb0f256f116f26f06c78c712b"
+deps = ["Combinatorics", "GeometryBasics", "LinearAlgebra", "MacroTools", "MappedArrays", "MultiFloats", "Polynomials", "PrecompileTools", "SIMD", "StaticArrays"]
+path = "C:\\Users\\s158686\\.julia\\dev\\Quickhull"
 uuid = "baca2653-9c88-49d2-a488-12dbf25fc4fb"
 version = "0.2.1"
 
