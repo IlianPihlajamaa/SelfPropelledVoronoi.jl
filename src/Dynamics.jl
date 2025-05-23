@@ -107,8 +107,8 @@ function compute_forces_SPV!(parameters, arrays, output)
 
             #find the two common vertices h and g that occur both in the voronoi_vertices of i and of j
             Nfound = 0
-            for vertex_k in voronoi_indices[particle_i]
-                if vertex_k in voronoi_indices[particle_j]
+            for vertex_k in voronoi_indices[particle_j]
+                if vertex_k in voronoi_indices[particle_i]
                     Nfound += 1
                     common_vertices[Nfound] = vertex_k                    
                 end
@@ -120,11 +120,34 @@ function compute_forces_SPV!(parameters, arrays, output)
             h = voronoi_vertices[common_vertices[1]]
             g = voronoi_vertices[common_vertices[2]]
 
+            # h is the first common vertex, g is the second common vertex by counterclockwise order around j
 
-            dAj_dxi = 0.0
-            dAj_dyi = 0.0
-            dPj_dxi = 0.0
-            dPj_dyi = 0.0
+            dAj_dhx = 0.0
+            dAj_dhy = 0.0
+            dAj_dgx = 0.0
+            dAj_dgy = 0.0
+            dPj_dhx = 0.0
+            dPj_dhy = 0.0
+            dPj_dgx = 0.0
+            dPj_dgy = 0.0
+
+            dhx_dxi = 0.0
+            dhx_dyi = 0.0
+            dhy_dxi = 0.0
+            dhy_dyi = 0.0
+            dgx_dxi = 0.0
+            dgx_dyi = 0.0
+            dgy_dxi = 0.0
+            dgy_dyi = 0.0
+            
+            dAj_dxi = dAj_dhx*dhx_dxi + dAj_dhy*dhy_dxi + 
+                      dAj_dgx*dgx_dxi + dAj_dgy*dgy_dxi
+            dAj_dyi = dAj_dhx*dhx_dyi + dAj_dhy*dhy_dyi + 
+                      dAj_dgx*dgx_dyi + dAj_dgy*dgy_dyi
+            dPj_dxi = dPj_dhx*dhx_dxi + dPj_dhy*dhy_dxi + 
+                      dPj_dgx*dgx_dxi + dPj_dgy*dgy_dxi
+            dPj_dyi = dPj_dhx*dhx_dyi + dPj_dhy*dhy_dyi + 
+                      dPj_dgx*dgx_dyi + dPj_dgy*dgy_dyi
             
 
 

@@ -8,7 +8,7 @@ rho = 1.3
 L = sqrt(N/rho)
 Lx = L
 Ly = L
-dt = 0.01
+dt = 0.000001
 Nsteps = 10000
 
 pbc_layer_depth = 2.5
@@ -33,7 +33,7 @@ voronoi_cells = VoronoiCells(
 )
 
 # Create a ParameterStruct object
-kBT = 0.00001
+kBT = 0.1
 frictionconstant = 1.0
 random_seed = 564574564
 Random.seed!(random_seed)
