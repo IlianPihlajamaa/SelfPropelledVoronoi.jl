@@ -161,7 +161,6 @@ function voronoi_tesselation!(parameters, arrays, output)
         push!(voronoi_vertex_positions_per_particle[k], voronoi_vertex_position)
     end
 
-
     for particle in 1:parameters.N
         voronoi_center = arrays.positions[particle]
         # sort the voronoi vertex indices counterclockwise

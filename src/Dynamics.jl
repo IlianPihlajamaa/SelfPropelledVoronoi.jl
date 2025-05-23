@@ -6,7 +6,8 @@ function compute_forces_SPV!(parameters, arrays, output)
     end
     N = parameters.N
     voronoi_neighbors = arrays.neighborlist.voronoi_neighbors
-    voronoi_vertices = arrays.neighborlist.voronoi_vertex_positions_per_particle
+    voronoi_vertices = arrays.neighborlist.voronoi_vertices
+    voronoi_vertices_per_particle = arrays.neighborlist.voronoi_vertex_positions_per_particle
     voronoi_indices = arrays.neighborlist.voronoi_vertex_indices
     update_perimeters!(parameters, arrays, output)
     update_areas!(parameters, arrays, output)
@@ -36,11 +37,11 @@ function compute_forces_SPV!(parameters, arrays, output)
 
         # part 1: -dEi/dri
         for j in eachindex(voronoi_indices[particle_i]) # loop over all h
-            h_i_j = voronoi_vertices[particle_i][j]
+            h_i_j = voronoi_vertices_per_particle[particle_i][j]
             next = j % length(voronoi_neighbors[particle_i]) + 1
-            h_i_jp1 = voronoi_vertices[particle_i][next]
+            h_i_jp1 = voronoi_vertices_per_particle[particle_i][next]
             prev = j - 1 == 0 ? length(voronoi_neighbors[particle_i]) : j - 1
-            h_i_jm1 = voronoi_vertices[particle_i][prev]
+            h_i_jm1 = voronoi_vertices_per_particle[particle_i][prev]
 
             # compute the distance between h_i_j and h_i_jp1
             hijp1_m_hij = h_i_jp1 - h_i_j
@@ -106,8 +107,6 @@ function compute_forces_SPV!(parameters, arrays, output)
 
             #find the two common vertices h and g that occur both in the voronoi_vertices of i and of j
             Nfound = 0
-            @show voronoi_indices[particle_i]
-            @show voronoi_indices[particle_j]
             for vertex_k in voronoi_indices[particle_i]
                 if vertex_k in voronoi_indices[particle_j]
                     Nfound += 1
@@ -117,8 +116,10 @@ function compute_forces_SPV!(parameters, arrays, output)
             if Nfound != 2
                 error("Error: neighborlist does not contain two common voronoi vertices")
             end
+
             h = voronoi_vertices[common_vertices[1]]
             g = voronoi_vertices[common_vertices[2]]
+
 
             dAj_dxi = 0.0
             dAj_dyi = 0.0
