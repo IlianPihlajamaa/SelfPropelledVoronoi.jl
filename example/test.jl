@@ -3,7 +3,7 @@ import Pkg; Pkg.activate("example")
 using Revise
 using SelfPropelledVoronoi, CairoMakie, StaticArrays, Random, Quickhull, ColorSchemes
 using Statistics
-N = 100
+N = 50
 rho = 1.3
 L = sqrt(N/rho)
 Lx = L
@@ -21,7 +21,7 @@ target_perimeters = 4.1*ones(N)
 target_areas = ones(N)
 K_P = 10*ones(N)
 K_A = ones(N)
-active_force_strengths = ones(N)
+active_force_strengths = ones(N)*0.0
 D_r = ones(N)
 voronoi_cells = VoronoiCells(
     target_perimeters,
@@ -33,7 +33,7 @@ voronoi_cells = VoronoiCells(
 )
 
 # Create a ParameterStruct object
-kBT = 0.0001
+kBT = 0.00001
 frictionconstant = 1.0
 random_seed = 564574564
 Random.seed!(random_seed)
@@ -55,8 +55,8 @@ function visualize(parameters, arrays, output)
     push!(energy_list, SelfPropelledVoronoi.compute_energy(parameters, arrays, output))
     push!(mean_perimeter_list, mean(arrays.perimeters))
     push!(area_std_list, std(arrays.areas))
-    if !(output.steps_done % 1000 == 0)
-        return 
+    if !(output.steps_done % 10 == 0)
+        return
     end
     SelfPropelledVoronoi.voronoi_tesselation!(parameters, arrays, output)
     Lx, Ly = parameters.box.box_sizes
@@ -143,12 +143,8 @@ arrays = ArrayStruct(N)
 
 # arrays.positions .= [rand(SVector{2, Float64}) .* box.box_sizes for _ in 1:N]
 #put particles on cubic lattice
-x = LinRange(0, box.box_sizes[1], ceil(Int, sqrt(N)))
-y = LinRange(0, box.box_sizes[2], ceil(Int, sqrt(N)))
-x = repeat(x, inner=(ceil(Int, sqrt(N)), 1))
-y = repeat(y, inner=(1, ceil(Int, sqrt(N))))
-x = x[1:N]
-y = y[1:N]
+x = rand(Float64, N) .* box.box_sizes[1]
+y = rand(Float64, N) .* box.box_sizes[2]
 arrays.positions .= SVector.(x, y)
 
 

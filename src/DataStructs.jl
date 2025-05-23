@@ -36,6 +36,7 @@ mutable struct VoronoiNeighborList
     voronoi_vertex_indices::Vector{Vector{Int}}     # List of Voronoi vertices for each particle sorted counterclockwise
     voronoi_vertex_positions_per_particle::Vector{Vector{SVector{2, Float64}}}  # List of Voronoi vertex positions for each particle
     voronoi_vertices::Vector{SVector{2,Float64}}                   # List of voronoi_vertices
+    cell_centers_that_share_a_vertex::Vector{Tuple{Int, Int, Int}}  # List of cell centers that share a vertex
     positions_with_pbc::Vector{SVector{2, Float64}}               # List of positions with periodic boundary conditions
     position_indices::Vector{Int64}                               # List of indices for the positions with periodic boundary conditions
     VoronoiNeighborList(N) = new(
@@ -43,6 +44,7 @@ mutable struct VoronoiNeighborList
         [Vector{Int64}() for _ in 1:N],
         [SVector{2, Float64}[] for _ in 1:N],
         [zero(SVector{2, Float64}) for _ in 1:N],
+        Tuple{Int, Int, Int}[],
         SVector{2, Float64}[],
         Int64[]
     )

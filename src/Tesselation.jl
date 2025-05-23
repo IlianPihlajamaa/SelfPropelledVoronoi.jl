@@ -103,20 +103,16 @@ function voronoi_tesselation!(parameters, arrays, output)
 
     # get the delauney triangulation
     positions_with_pbc = arrays.neighborlist.positions_with_pbc
-    pbc_position_indices = arrays.neighborlist.position_indices
-
+    N_pbc = length(positions_with_pbc)
     voronoi_vertices = SVector{2, Float64}[]
-    voronoi_vertex_indices = [Int[] for _ in 1:parameters.N]
-    voronoi_vertex_positions_per_particle = [SVector{2, Float64}[] for _ in 1:parameters.N]
-    voronoi_neighbors = [Int[] for _ in 1:length(positions_with_pbc)]
+    voronoi_vertex_indices = [Int[] for _ in 1:N_pbc]
+    voronoi_vertex_positions_per_particle = [SVector{2, Float64}[] for _ in 1:N_pbc]
+    voronoi_neighbors = [Int[] for _ in 1:N_pbc]
+    cell_centers_that_share_a_vertex = Tuple{Int, Int, Int}[]
+
 
     tri = Quickhull.delaunay(positions_with_pbc)
     delauney_facets = Quickhull.facets(tri)
-
-    for particle in 1:parameters.N
-        # remove the old voronoi neighbors
-        voronoi_neighbors[particle] = Int[]
-    end
 
     for facet in delauney_facets
         i = facet[1]
@@ -154,7 +150,7 @@ function voronoi_tesselation!(parameters, arrays, output)
         )
 
         push!(voronoi_vertices, voronoi_vertex_position)
-
+        push!(cell_centers_that_share_a_vertex, (i, j, k))
         # # add the voronoi vertex to the voronoi vertices list
 
         push!(voronoi_vertex_indices[i], length(voronoi_vertices))
@@ -177,11 +173,9 @@ function voronoi_tesselation!(parameters, arrays, output)
 
     arrays.neighborlist.voronoi_vertices = voronoi_vertices
     arrays.neighborlist.voronoi_neighbors = voronoi_neighbors
-    for particle in 1:parameters.N
-        # resize the voronoi vertex indices to the number of voronoi vertices
-        arrays.neighborlist.voronoi_vertex_indices[particle] = voronoi_vertex_indices[particle]
-        arrays.neighborlist.voronoi_vertex_positions_per_particle[particle] = voronoi_vertex_positions_per_particle[particle]
-    end
+    arrays.neighborlist.voronoi_vertex_indices = voronoi_vertex_indices
+    arrays.neighborlist.voronoi_vertex_positions_per_particle = voronoi_vertex_positions_per_particle
+    arrays.neighborlist.cell_centers_that_share_a_vertex = cell_centers_that_share_a_vertex
     return 
 end
 
