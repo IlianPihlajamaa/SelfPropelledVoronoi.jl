@@ -18,7 +18,7 @@ for file in [
     include(file) 
 end
 
-export SimulationBox, ParameterStruct, VoronoiCells, ArrayStruct, Output, DumpInfo
+export SimulationBox, ParameterStruct, VoronoiCells, ArrayStruct, Output, DumpInfo, VoronoiNeighborList
 export run_simulation!
 
 

@@ -1,10 +1,10 @@
 function compute_forces_SPV!(parameters, arrays, output)
     # do lennard jones for now
-    println("Computing forces ", output.steps_done)
-    @time tri = Quickhull.delaunay(arrays.positions)
-    @time vor_vertices = Quickhull.voronoi_centers(tri)
-    @time vor_edges = Quickhull.voronoi_edges(tri)
-    @time vor_edge_points = [(vor_vertices[i], vor_vertices[j]) for (i, j) in vor_edges]
+    # println("Computing forces ", output.steps_done)
+    # @time tri = Quickhull.delaunay(arrays.positions)
+    # @time vor_vertices = Quickhull.voronoi_centers(tri)
+    # @time vor_edges = Quickhull.voronoi_edges(tri)
+    # @time vor_edge_points = [(vor_vertices[i], vor_vertices[j]) for (i, j) in vor_edges]
 
     # for every particle, find all the corresponding voronoi edges
 
@@ -13,10 +13,10 @@ function compute_forces_SPV!(parameters, arrays, output)
     # of the triangle formed by the three vertices of the facet. We save the voronoi vertex in the list and 
     # save also the indices of the vertices of the voronoi cell in a list for all the particles
 
-    facets = Quickhull.facets(tri)
+    # facets = Quickhull.facets(tri)
 
-    voronoi_cells = [Int[] for _ in 1:parameters.N]
-    voronoi_edges = [Int[] for _ in 1:parameters.N]
+    # voronoi_cells = [Int[] for _ in 1:parameters.N]
+    # voronoi_edges = [Int[] for _ in 1:parameters.N]
 
 
 
@@ -76,6 +76,7 @@ end
 
 
 
+
 function do_time_step_Euler_Murayama(parameters, arrays, output)
     dt = parameters.dt
     mobility = 1 / parameters.frictionconstant
@@ -98,6 +99,7 @@ function do_time_step_Euler_Murayama(parameters, arrays, output)
         new_orientation = old_orientation + sqrt(2*dt*Dr) * randn()
         orientations[particle] = new_orientation
     end
+
     # update positions
     for particle in 1:parameters.N
         old_orientation = old_orientations[particle]
@@ -105,6 +107,15 @@ function do_time_step_Euler_Murayama(parameters, arrays, output)
         new_position = positions[particle] + dt * (forces[particle] * mobility + active_force_strengths[particle] * old_orientation_vector)
         positions[particle] = apply_periodic_boundary_conditions(new_position, box_sizes)
     end
+
+
+    # Check if the simulation should be retesselated
+    if !verify_tesselation(parameters, arrays, output)
+        voronoi_tesselation!(parameters, arrays, output)
+    else
+        update_delauney_vertices!(parameters, arrays, output)
+    end
+
     # update orientations
     old_forces .= forces
     old_positions .= positions
@@ -150,6 +161,13 @@ function do_time_step_Euler_Heun!(parameters, arrays, output)
         new_position = positions[particle] + dt * (forces[particle] * mobility + active_force_strengths[particle] * old_orientation_vector)
         positions[particle] = apply_periodic_boundary_conditions(new_position, box_sizes)
     end
+
+    if !verify_tesselation(parameters, arrays, output)
+        voronoi_tesselation!(parameters, arrays, output)
+    else
+        update_delauney_vertices!(parameters, arrays, output)
+    end
+
     old_forces .= forces
     compute_forces_SPV!(parameters, arrays, output)
 
@@ -172,7 +190,11 @@ function do_time_step_Euler_Heun!(parameters, arrays, output)
         positions[particle] = apply_periodic_boundary_conditions(new_position, box_sizes)
     end
 
-
+    if !verify_tesselation(parameters, arrays, output)
+        voronoi_tesselation!(parameters, arrays, output)
+    else
+        update_delauney_vertices!(parameters, arrays, output)
+    end
     # update orientations
 
     old_positions .= positions
@@ -184,6 +206,8 @@ end
 
 function run_simulation!(parameters, arrays, output)
     step = output.steps_done
+
+    voronoi_tesselation!(parameters, arrays, output)
 
     # Main simulation loop
     while true
@@ -202,10 +226,6 @@ function run_simulation!(parameters, arrays, output)
             end
         end
 
-        # Check if the simulation should be tesselated
-        # if !verify_tesselation(parameters, arrays, output)
-        #     voronoi_tesselation!(parameters, arrays, output)
-        # end
 
         # Check if the simulation should be stopped
         step = step + 1
