@@ -3,13 +3,13 @@ import Pkg; Pkg.activate("example")
 using Revise
 using SelfPropelledVoronoi, CairoMakie, StaticArrays, Random, Quickhull, ColorSchemes
 using Statistics
-N = 500
-rho = 0.9
+N = 100
+rho = 1.3
 L = sqrt(N/rho)
 Lx = L
 Ly = L
 dt = 0.01
-Nsteps = 1000
+Nsteps = 10000
 
 pbc_layer_depth = 2.5
 
@@ -33,7 +33,7 @@ voronoi_cells = VoronoiCells(
 )
 
 # Create a ParameterStruct object
-kBT = 1.0
+kBT = 0.0001
 frictionconstant = 1.0
 random_seed = 564574564
 Random.seed!(random_seed)
@@ -55,7 +55,7 @@ function visualize(parameters, arrays, output)
     push!(energy_list, SelfPropelledVoronoi.compute_energy(parameters, arrays, output))
     push!(mean_perimeter_list, mean(arrays.perimeters))
     push!(area_std_list, std(arrays.areas))
-    if !(output.steps_done % 100 == 0)
+    if !(output.steps_done % 1000 == 0)
         return 
     end
     SelfPropelledVoronoi.voronoi_tesselation!(parameters, arrays, output)
@@ -68,59 +68,42 @@ function visualize(parameters, arrays, output)
     #draw original box 
    
     # draw the voronoi cells
-    n_particles_pbc = length(arrays.neighborlist.positions_with_pbc)
     scatter!(ax1, arrays.neighborlist.positions_with_pbc, markersize=25, color =:blue)
 
     #draw voronoi vertices 
     scatter!(ax1, arrays.neighborlist.voronoi_vertices, markersize=15, color=:green)
     # draw delaunay edges (voronoi neighbors)
+
+    linessegs = Tuple{SVector{2, Float64}, SVector{2, Float64}}[]
     for particle_i in 1:length(arrays.positions)
         for particle_j in arrays.neighborlist.voronoi_neighbors[particle_i]
             if particle_i > particle_j
                 continue
             end
             posi = arrays.positions[particle_i]
-            posj = arrays.positions[particle_j]
+            posj = arrays.neighborlist.positions_with_pbc[particle_j]
 
-            dr = posj - posi
             # apply periodic boundary conditions
-            dr = dr - round.(dr ./ parameters.box.box_sizes) .* parameters.box.box_sizes
-            posj2 = posi + dr
-            linesegments!(ax1, [
-                (posi, posj2),
-            ], color=:red, linestyle=:dash)
-
-            posi2 = posj - dr
-            linesegments!(ax1, [
-                (posi2, posj),
-            ], color=:red, linestyle=:dash)
+            push!(linessegs, (posi, posj))
         end
     end
+    linesegments!(ax1, linessegs, color=:red, linestyle=:dash)
     # draw voronoi edges
+    linesegs2 = Tuple{SVector{2, Float64}, SVector{2, Float64}}[]
     for particle_i in 1:length(arrays.positions)
         indices = arrays.neighborlist.voronoi_vertex_indices[particle_i]
         vor_positions = arrays.neighborlist.voronoi_vertex_positions_per_particle[particle_i]
 
         for i in 1:length(indices)
             j = i % length(indices) + 1
-
-            
             posi = vor_positions[i]
             posj = vor_positions[j]
-
-            # only if both are in the original box
-            # if !( 0 < posi[1] < Lx && 0 < posi[2] < Ly && 0 < posj[1] < Lx && 0 < posj[2] < Ly)
-            #     continue
-            # end
-
-
             # apply periodic boundary conditions
-            linesegments!(ax1, [
-                (posi, posj),
-            ], color=:black)
 
+            push!(linesegs2, (posi, posj))
         end
     end
+    linesegments!(ax1, linesegs2, color=:black)
 
     linesegments!(ax1, [
         (0, 0), (Lx, 0),

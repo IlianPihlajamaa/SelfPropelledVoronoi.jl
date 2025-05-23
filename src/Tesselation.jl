@@ -97,7 +97,6 @@ end
 # save also the indices of the vertices of the voronoi cell in a list for all the particle
 function voronoi_tesselation!(parameters, arrays, output)
 
-    voronoi_neighbors = arrays.neighborlist.voronoi_neighbors
     N = parameters.N
     Lx, Ly = parameters.box.box_sizes
     update_positions_with_pbcs!(parameters, arrays, output)
@@ -109,6 +108,8 @@ function voronoi_tesselation!(parameters, arrays, output)
     voronoi_vertices = SVector{2, Float64}[]
     voronoi_vertex_indices = [Int[] for _ in 1:parameters.N]
     voronoi_vertex_positions_per_particle = [SVector{2, Float64}[] for _ in 1:parameters.N]
+    voronoi_neighbors = [Int[] for _ in 1:length(positions_with_pbc)]
+
     tri = Quickhull.delaunay(positions_with_pbc)
     delauney_facets = Quickhull.facets(tri)
 
@@ -121,35 +122,28 @@ function voronoi_tesselation!(parameters, arrays, output)
         i = facet[1]
         j = facet[2]
         k = facet[3]
-    
-        original_i = pbc_position_indices[i]
-        original_j = pbc_position_indices[j]
-        original_k = pbc_position_indices[k]
-
-        # at least one must be part of the original particles
 
     
-        if (i <= N || j <= N || k <= N)
-            # add these to the voronoi neighborlist for every particle pair, checking if it is already filled
-            if !(original_j in voronoi_neighbors[original_i])
-                push!(voronoi_neighbors[original_i], original_j)
-            end
-            if !(original_k in voronoi_neighbors[original_i])
-                push!(voronoi_neighbors[original_i], original_k)
-            end
-            if !(original_i in voronoi_neighbors[original_j])
-                push!(voronoi_neighbors[original_j], original_i)
-            end
-            if !(original_k in voronoi_neighbors[original_j])
-                push!(voronoi_neighbors[original_j], original_k)
-            end
-            if !(original_i in voronoi_neighbors[original_k])
-                push!(voronoi_neighbors[original_k], original_i)
-            end
-            if !(original_j in voronoi_neighbors[original_k])
-                push!(voronoi_neighbors[original_k], original_j)
-            end
+        # add these to the voronoi neighborlist for every particle pair, checking if it is already filled
+        if !(j in voronoi_neighbors[i])
+            push!(voronoi_neighbors[i], j)
         end
+        if !(k in voronoi_neighbors[i])
+            push!(voronoi_neighbors[i], k)
+        end
+        if !(i in voronoi_neighbors[j])
+            push!(voronoi_neighbors[j], i)
+        end
+        if !(k in voronoi_neighbors[j])
+            push!(voronoi_neighbors[j], k)
+        end
+        if !(i in voronoi_neighbors[k])
+            push!(voronoi_neighbors[k], i)
+        end
+        if !(j in voronoi_neighbors[k])
+            push!(voronoi_neighbors[k], j)
+        end
+
         # compute the voronoi vertices as the circumcenter of the facet
         # and add it to the voronoi vertices list
 
@@ -163,22 +157,12 @@ function voronoi_tesselation!(parameters, arrays, output)
 
         # # add the voronoi vertex to the voronoi vertices list
 
-        if original_i == i
-            # add the voronoi vertex to the voronoi vertex list for the original particle
-            push!(voronoi_vertex_indices[original_i], length(voronoi_vertices))
-            push!(voronoi_vertex_positions_per_particle[original_i], voronoi_vertex_position)
-        end
-        if original_j == j
-            # add the voronoi vertex to the voronoi vertex list for the original particle
-            push!(voronoi_vertex_indices[original_j], length(voronoi_vertices))
-            push!(voronoi_vertex_positions_per_particle[original_j], voronoi_vertex_position)
-        end
-        if original_k == k
-            # add the voronoi vertex to the voronoi vertex list for the original particle
-            push!(voronoi_vertex_indices[original_k], length(voronoi_vertices))
-            push!(voronoi_vertex_positions_per_particle[original_k], voronoi_vertex_position)
-        end
-
+        push!(voronoi_vertex_indices[i], length(voronoi_vertices))
+        push!(voronoi_vertex_positions_per_particle[i], voronoi_vertex_position)
+        push!(voronoi_vertex_indices[j], length(voronoi_vertices))
+        push!(voronoi_vertex_positions_per_particle[j], voronoi_vertex_position)
+        push!(voronoi_vertex_indices[k], length(voronoi_vertices))
+        push!(voronoi_vertex_positions_per_particle[k], voronoi_vertex_position)
     end
 
 
@@ -192,6 +176,7 @@ function voronoi_tesselation!(parameters, arrays, output)
     end
 
     arrays.neighborlist.voronoi_vertices = voronoi_vertices
+    arrays.neighborlist.voronoi_neighbors = voronoi_neighbors
     for particle in 1:parameters.N
         # resize the voronoi vertex indices to the number of voronoi vertices
         arrays.neighborlist.voronoi_vertex_indices[particle] = voronoi_vertex_indices[particle]

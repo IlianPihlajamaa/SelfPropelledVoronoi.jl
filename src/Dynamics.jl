@@ -1,50 +1,77 @@
 function compute_forces_SPV!(parameters, arrays, output)
-    # do lennard jones for now
-    # println("Computing forces ", output.steps_done)
-    # @time tri = Quickhull.delaunay(arrays.positions)
-    # @time vor_vertices = Quickhull.voronoi_centers(tri)
-    # @time vor_edges = Quickhull.voronoi_edges(tri)
-    # @time vor_edge_points = [(vor_vertices[i], vor_vertices[j]) for (i, j) in vor_edges]
-
-    # for every particle, find all the corresponding voronoi edges
-
-    # To do this, we loop over all facets of the triangulation
-    # and for each facet, we find the corresponding voronoi vertices by getting the circumcenter
-    # of the triangle formed by the three vertices of the facet. We save the voronoi vertex in the list and 
-    # save also the indices of the vertices of the voronoi cell in a list for all the particles
-
-    # facets = Quickhull.facets(tri)
-
-    # voronoi_cells = [Int[] for _ in 1:parameters.N]
-    # voronoi_edges = [Int[] for _ in 1:parameters.N]
-
-
-
-
     N = parameters.N
-    for i in 1:N
-        Fi = SVector(0.0, 0.0)
+    voronoi_neighbors = arrays.neighborlist.voronoi_neighbors
+    voronoi_vertices = arrays.neighborlist.voronoi_vertex_positions_per_particle
+    voronoi_indices = arrays.neighborlist.voronoi_vertex_indices
+    update_perimeters!(parameters, arrays, output)
+    update_areas!(parameters, arrays, output)
+    common_vertices = zeros(Int, 2)
 
-        for j in 1:N
-            if i == j
-                continue
+    for particle_i in 1:N
+        Fx = 0.0
+        Fy = 0.0
+
+        dEi_drix = 0.0
+        dEi_driy = 0.0
+
+        Fx -= dEi_drix
+        Fy -= dEi_driy
+
+        for particle_j in voronoi_neighbors[particle_i]
+
+            # every set of neighbors share two voronoi vertices, call them h and g. The energies depend on their positions hx, hy, gx, gy.  
+
+            # find the two common vertex indices i_h and i_g\
+            nfound = 0
+            for index1 in voronoi_indices[particle_i]
+                for indexj in voronoi_indices[particle_j]
+                    if index1 == indexj
+                        nfound += 1
+                        common_vertices[nfound] = index1
+                    end
+                end
             end
-            rij = compute_pair_distance_vector(arrays.positions[i], arrays.positions[j], parameters.box.box_sizes)
-            r = sqrt(sum(rij.*rij))
-            if r < 2^(1/6)
-                # Gaussian core
-                f = -2 * rij  * exp(-r^2)
-                Fi += f
+            @show common_vertices
+            if nfound != 2
+                error("Error: Voronoi neighbors do not share two vertices")
             end
-        end
-        arrays.forces[i] =  Fi
+           
+            dEi_drix = 0.0
+            dEi_driy = 0.0
+            dEj_drix = 0.0
+            dEj_driy = 0.0
+            dEj_dhx = 0.0
+            dEj_dhy = 0.0
+            dEj_dgx = 0.0
+            dEj_dgy = 0.0
+            dhx_drix = 0.0
+            dhx_driy = 0.0
+            dhy_drix = 0.0
+            dhy_driy = 0.0
+            dgx_drix = 0.0
+            dgx_driy = 0.0
+            dgy_drix = 0.0
+            dgy_driy = 0.0
+
+
+            dEjdrix = dEj_dhx*dhx_drix + dEj_dhy*dhy_drix + dEj_dgx*dgx_drix + dEj_dgy*dgy_drix
+            dEjdriy = dEj_dhx*dhx_driy + dEj_dhy*dhy_driy + dEj_dgx*dgx_driy + dEj_dgy*dgy_driy
+
+            Fx -= dEjdrix
+            Fy -= dEjdriy
+            
+        end 
+
     end
+
     return
 end
 
 
+
+
 function compute_forces_GCM!(parameters, arrays, output)
-    # do lennard jones for now
+    # do Gaussian core model for now
     N = parameters.N
     for i in 1:N
         Fi = SVector(0.0, 0.0)
