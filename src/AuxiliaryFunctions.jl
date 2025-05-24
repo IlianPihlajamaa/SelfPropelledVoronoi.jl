@@ -52,28 +52,17 @@ function update_areas!(parameters, arrays, output)
     end
 end
 
-
 function compute_energy(parameters, arrays, output)
-    # compute the potential energy of the system
-
-    update_areas!(parameters, arrays, output)
-    update_perimeters!(parameters, arrays, output)
-
-    potential_energy = 0.0
-
+    N = parameters.N
+    areas = arrays.areas
+    perimeters = arrays.perimeters
     target_perimeters = parameters.particles.target_perimeters
     target_areas = parameters.particles.target_areas
     K_P = parameters.particles.K_P
     K_A = parameters.particles.K_A
-
-    for particle in 1:parameters.N
-        area = arrays.areas[particle]
-        perimeter = arrays.perimeters[particle]
-        # compute the potential energy of the voronoi cell
-        potential_energy += K_A[particle] * (area - target_areas[particle])^2
-        potential_energy += K_P[particle] * (perimeter - target_perimeters[particle])^2
+    E = 0.0
+    for i in 1:N
+        E += K_A[i]*(areas[i] - target_areas[i])^2 + K_P[i]*(perimeters[i] - target_perimeters[i])^2
     end
-    return potential_energy
+    return E
 end
-
-
