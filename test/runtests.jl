@@ -11,121 +11,121 @@ end
 @testset "apply_periodic_boundary_conditions" begin
     # 1D cases
     @testset "1D" begin
-        @test apply_periodic_boundary_conditions(0.5, 1.0) ≈ 0.5
-        @test apply_periodic_boundary_conditions(1.5, 1.0) ≈ 0.5
-        @test apply_periodic_boundary_conditions(-0.5, 1.0) ≈ 0.5
-        @test apply_periodic_boundary_conditions(1.0, 1.0) ≈ 0.0
-        @test apply_periodic_boundary_conditions(0.0, 1.0) ≈ 0.0
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(0.5, 1.0) ≈ 0.5
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(1.5, 1.0) ≈ 0.5
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(-0.5, 1.0) ≈ 0.5
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(1.0, 1.0) ≈ 0.0
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(0.0, 1.0) ≈ 0.0
     end
 
     # 2D cases
     @testset "2D" begin
-        @test apply_periodic_boundary_conditions(SVector(0.5, 0.5), SVector(1.0, 1.0)) ≈ SVector(0.5, 0.5)
-        @test apply_periodic_boundary_conditions(SVector(1.5, -0.5), SVector(1.0, 1.0)) ≈ SVector(0.5, 0.5)
-        @test apply_periodic_boundary_conditions(SVector(1.0, 0.0), SVector(1.0, 1.0)) ≈ SVector(0.0, 0.0)
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(0.5, 0.5), SVector(1.0, 1.0)) ≈ SVector(0.5, 0.5)
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.5, -0.5), SVector(1.0, 1.0)) ≈ SVector(0.5, 0.5)
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.0, 0.0), SVector(1.0, 1.0)) ≈ SVector(0.0, 0.0)
     end
 
     # 3D cases
     @testset "3D" begin
-        @test apply_periodic_boundary_conditions(SVector(0.5, 0.5, 0.5), SVector(1.0, 1.0, 1.0)) ≈ SVector(0.5, 0.5, 0.5)
-        @test apply_periodic_boundary_conditions(SVector(1.5, -0.5, 1.2), SVector(1.0, 1.0, 1.0)) ≈ SVector(0.5, 0.5, 0.2)
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(0.5, 0.5, 0.5), SVector(1.0, 1.0, 1.0)) ≈ SVector(0.5, 0.5, 0.5)
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.5, -0.5, 1.2), SVector(1.0, 1.0, 1.0)) ≈ SVector(0.5, 0.5, 0.2)
     end
 end
 
 @testset "compute_pair_distance_vector" begin
     # 1D cases
     @testset "1D" begin
-        @test compute_pair_distance_vector(0.2, 0.8, 1.0) ≈ 0.6
-        @test compute_pair_distance_vector(0.8, 0.2, 1.0) ≈ 0.4
-        @test compute_pair_distance_vector(0.1, 0.9, 1.0) ≈ -0.2
-        @test compute_pair_distance_vector(0.0, 0.5, 1.0) ≈ 0.5
-        @test compute_pair_distance_vector(0.0, 0.9, 1.0) ≈ -0.1
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(0.2, 0.8, 1.0) ≈ 0.6
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(0.8, 0.2, 1.0) ≈ 0.4
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(0.1, 0.9, 1.0) ≈ -0.2
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(0.0, 0.5, 1.0) ≈ 0.5
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(0.0, 0.9, 1.0) ≈ -0.1
     end
 
     # 2D cases
     @testset "2D" begin
-        @test compute_pair_distance_vector(SVector(0.2, 0.2), SVector(0.4, 0.4), SVector(1.0, 1.0)) ≈ SVector(0.2, 0.2)
-        @test compute_pair_distance_vector(SVector(0.8, 0.2), SVector(0.2, 0.4), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.2)
-        @test compute_pair_distance_vector(SVector(0.8, 0.8), SVector(0.2, 0.2), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.4)
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.2, 0.2), SVector(0.4, 0.4), SVector(1.0, 1.0)) ≈ SVector(0.2, 0.2)
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.2), SVector(0.2, 0.4), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.2)
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.8), SVector(0.2, 0.2), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.4)
     end
 
     # 3D cases
     @testset "3D" begin
-        @test compute_pair_distance_vector(SVector(0.1, 0.2, 0.3), SVector(0.4, 0.5, 0.6), SVector(1.0, 1.0, 1.0)) ≈ SVector(0.3, 0.3, 0.3)
-        @test compute_pair_distance_vector(SVector(0.8, 0.9, 0.7), SVector(0.2, 0.1, 0.3), SVector(1.0, 1.0, 1.0)) ≈ SVector(0.4, 0.2, -0.4)
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.1, 0.2, 0.3), SVector(0.4, 0.5, 0.6), SVector(1.0, 1.0, 1.0)) ≈ SVector(0.3, 0.3, 0.3)
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.9, 0.7), SVector(0.2, 0.1, 0.3), SVector(1.0, 1.0, 1.0)) ≈ SVector(0.4, 0.2, -0.4)
     end
 end
 
 @testset "Cell Property Updates" begin
-    using SelfPropelledVoronoi: ParameterStruct, ArrayStruct, VoronoiCells, SimulationBox, Output, DumpInfo, update_perimeters!, update_areas!
+    # Removed: using SelfPropelledVoronoi: ParameterStruct, ArrayStruct, VoronoiCells, SimulationBox, Output, DumpInfo, update_perimeters!, update_areas!
     using Random: MersenneTwister
 
     @testset "Single Square Cell" begin
         N = 1
-        particles_data = VoronoiCells([0.0], [0.0], [0.0], [0.0], [0.0], [0.0])
-        box = SimulationBox(10.0, 10.0)
+        particles_data = SelfPropelledVoronoi.VoronoiCells([0.0], [0.0], [0.0], [0.0], [0.0], [0.0])
+        box = SelfPropelledVoronoi.SimulationBox(10.0, 10.0)
         # Need to define DumpInfo for ParameterStruct
-        dump_info = DumpInfo(save=false)
-        parameters = ParameterStruct(N, 0.1, 100, 0.1, 0.1, 0.1, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
+        dump_info = SelfPropelledVoronoi.DumpInfo(save=false)
+        parameters = SelfPropelledVoronoi.ParameterStruct(N, 0.1, 100, 0.1, 0.1, 0.1, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
         
-        arrays = ArrayStruct(N)
+        arrays = SelfPropelledVoronoi.ArrayStruct(N)
         square_vertices = [SVector(0.0, 0.0), SVector(1.0, 0.0), SVector(1.0, 1.0), SVector(0.0, 1.0)]
         arrays.neighborlist.voronoi_vertex_positions_per_particle[1] = square_vertices
-        output = Output()
+        output = SelfPropelledVoronoi.Output()
 
-        update_perimeters!(parameters, arrays, output)
+        SelfPropelledVoronoi.update_perimeters!(parameters, arrays, output)
         @test arrays.perimeters[1] ≈ 4.0
 
-        update_areas!(parameters, arrays, output)
+        SelfPropelledVoronoi.update_areas!(parameters, arrays, output)
         @test arrays.areas[1] ≈ 1.0
     end
 
     @testset "Single Rectangular Cell" begin
         N = 1
-        particles_data = VoronoiCells([0.0], [0.0], [0.0], [0.0], [0.0], [0.0])
-        box = SimulationBox(10.0, 10.0)
-        dump_info = DumpInfo(save=false)
-        parameters = ParameterStruct(N, 0.1, 100, 0.1, 0.1, 0.1, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
+        particles_data = SelfPropelledVoronoi.VoronoiCells([0.0], [0.0], [0.0], [0.0], [0.0], [0.0])
+        box = SelfPropelledVoronoi.SimulationBox(10.0, 10.0)
+        dump_info = SelfPropelledVoronoi.DumpInfo(save=false)
+        parameters = SelfPropelledVoronoi.ParameterStruct(N, 0.1, 100, 0.1, 0.1, 0.1, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
 
-        arrays = ArrayStruct(N)
+        arrays = SelfPropelledVoronoi.ArrayStruct(N)
         rect_vertices = [SVector(0.0, 0.0), SVector(2.0, 0.0), SVector(2.0, 1.0), SVector(0.0, 1.0)]
         arrays.neighborlist.voronoi_vertex_positions_per_particle[1] = rect_vertices
-        output = Output()
+        output = SelfPropelledVoronoi.Output()
 
-        update_perimeters!(parameters, arrays, output)
+        SelfPropelledVoronoi.update_perimeters!(parameters, arrays, output)
         @test arrays.perimeters[1] ≈ 6.0
 
-        update_areas!(parameters, arrays, output)
+        SelfPropelledVoronoi.update_areas!(parameters, arrays, output)
         @test arrays.areas[1] ≈ 2.0
     end
 
     @testset "Two Cells (Square and Rectangle)" begin
         N = 2
-        particles_data = VoronoiCells(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
-        box = SimulationBox(10.0, 10.0)
-        dump_info = DumpInfo(save=false)
-        parameters = ParameterStruct(N, 0.1, 100, 0.1, 0.1, 0.1, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
+        particles_data = SelfPropelledVoronoi.VoronoiCells(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
+        box = SelfPropelledVoronoi.SimulationBox(10.0, 10.0)
+        dump_info = SelfPropelledVoronoi.DumpInfo(save=false)
+        parameters = SelfPropelledVoronoi.ParameterStruct(N, 0.1, 100, 0.1, 0.1, 0.1, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
         
-        arrays = ArrayStruct(N)
+        arrays = SelfPropelledVoronoi.ArrayStruct(N)
         square_vertices = [SVector(0.0, 0.0), SVector(1.0, 0.0), SVector(1.0, 1.0), SVector(0.0, 1.0)]
         rect_vertices = [SVector(0.0, 0.0), SVector(2.0, 0.0), SVector(2.0, 1.0), SVector(0.0, 1.0)]
         
         arrays.neighborlist.voronoi_vertex_positions_per_particle[1] = square_vertices
         arrays.neighborlist.voronoi_vertex_positions_per_particle[2] = rect_vertices
-        output = Output()
+        output = SelfPropelledVoronoi.Output()
 
-        update_perimeters!(parameters, arrays, output)
+        SelfPropelledVoronoi.update_perimeters!(parameters, arrays, output)
         @test arrays.perimeters[1] ≈ 4.0
         @test arrays.perimeters[2] ≈ 6.0
 
-        update_areas!(parameters, arrays, output)
+        SelfPropelledVoronoi.update_areas!(parameters, arrays, output)
         @test arrays.areas[1] ≈ 1.0
         @test arrays.areas[2] ≈ 2.0
     end
 end
 
 @testset "compute_energy" begin
-    using SelfPropelledVoronoi: ParameterStruct, ArrayStruct, VoronoiCells, SimulationBox, Output, DumpInfo, compute_energy
+    # Removed: using SelfPropelledVoronoi: ParameterStruct, ArrayStruct, VoronoiCells, SimulationBox, Output, DumpInfo, compute_energy
     using Random: MersenneTwister # Ensure MersenneTwister is explicitly imported if not already available globally in test scope
 
     @testset "Single Square Cell, Zero Energy" begin
@@ -134,17 +134,17 @@ end
         target_perimeter = 4.0
         K_A = 0.5
         K_P = 0.2
-        particles_data = VoronoiCells([target_perimeter], [target_area], [K_P], [K_A], [0.0], [0.0])
-        box = SimulationBox(10.0, 10.0)
-        dump_info = DumpInfo(save=false)
-        parameters = ParameterStruct(N, 0.1, 100, 0.1, 0.1, 0.1, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
+        particles_data = SelfPropelledVoronoi.VoronoiCells([target_perimeter], [target_area], [K_P], [K_A], [0.0], [0.0])
+        box = SelfPropelledVoronoi.SimulationBox(10.0, 10.0)
+        dump_info = SelfPropelledVoronoi.DumpInfo(save=false)
+        parameters = SelfPropelledVoronoi.ParameterStruct(N, 0.1, 100, 0.1, 0.1, 0.1, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
         
-        arrays = ArrayStruct(N)
+        arrays = SelfPropelledVoronoi.ArrayStruct(N)
         square_vertices = [SVector(0.0, 0.0), SVector(1.0, 0.0), SVector(1.0, 1.0), SVector(0.0, 1.0)]
         arrays.neighborlist.voronoi_vertex_positions_per_particle[1] = square_vertices
-        output = Output()
+        output = SelfPropelledVoronoi.Output()
 
-        energy = compute_energy(parameters, arrays, output)
+        energy = SelfPropelledVoronoi.compute_energy(parameters, arrays, output)
         @test energy ≈ 0.0
     end
 
@@ -154,17 +154,17 @@ end
         target_perimeter = 3.5
         K_A = 0.5
         K_P = 0.2
-        particles_data = VoronoiCells([target_perimeter], [target_area], [K_P], [K_A], [0.0], [0.0])
-        box = SimulationBox(10.0, 10.0) # Re-define or ensure it's available
-        dump_info = DumpInfo(save=false)
-        parameters = ParameterStruct(N, 0.1, 100, 0.1, 0.1, 0.1, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
+        particles_data = SelfPropelledVoronoi.VoronoiCells([target_perimeter], [target_area], [K_P], [K_A], [0.0], [0.0])
+        box = SelfPropelledVoronoi.SimulationBox(10.0, 10.0) # Re-define or ensure it's available
+        dump_info = SelfPropelledVoronoi.DumpInfo(save=false)
+        parameters = SelfPropelledVoronoi.ParameterStruct(N, 0.1, 100, 0.1, 0.1, 0.1, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
         
-        arrays = ArrayStruct(N)
+        arrays = SelfPropelledVoronoi.ArrayStruct(N)
         square_vertices = [SVector(0.0, 0.0), SVector(1.0, 0.0), SVector(1.0, 1.0), SVector(0.0, 1.0)]
         arrays.neighborlist.voronoi_vertex_positions_per_particle[1] = square_vertices
-        output = Output()
+        output = SelfPropelledVoronoi.Output()
 
-        energy = compute_energy(parameters, arrays, output)
+        energy = SelfPropelledVoronoi.compute_energy(parameters, arrays, output)
         expected_energy = K_A * (1.0 - target_area)^2 + K_P * (4.0 - target_perimeter)^2
         # 0.5 * (1.0 - 0.8)^2 + 0.2 * (4.0 - 3.5)^2 = 0.5 * (0.2)^2 + 0.2 * (0.5)^2
         # = 0.5 * 0.04 + 0.2 * 0.25 = 0.02 + 0.05 = 0.07
@@ -184,19 +184,19 @@ end
         KA2 = 0.3
         KP2 = 0.1
 
-        particles_data = VoronoiCells([P1_target, P2_target], [A1_target, A2_target], [KP1, KP2], [KA1, KA2], [0.0, 0.0], [0.0, 0.0])
-        box = SimulationBox(10.0, 10.0) # Re-define or ensure it's available
-        dump_info = DumpInfo(save=false)
-        parameters = ParameterStruct(N, 0.1, 100, 0.1, 0.1, 0.1, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
+        particles_data = SelfPropelledVoronoi.VoronoiCells([P1_target, P2_target], [A1_target, A2_target], [KP1, KP2], [KA1, KA2], [0.0, 0.0], [0.0, 0.0])
+        box = SelfPropelledVoronoi.SimulationBox(10.0, 10.0) # Re-define or ensure it's available
+        dump_info = SelfPropelledVoronoi.DumpInfo(save=false)
+        parameters = SelfPropelledVoronoi.ParameterStruct(N, 0.1, 100, 0.1, 0.1, 0.1, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
 
-        arrays = ArrayStruct(N)
+        arrays = SelfPropelledVoronoi.ArrayStruct(N)
         square_vertices = [SVector(0.0, 0.0), SVector(1.0, 0.0), SVector(1.0, 1.0), SVector(0.0, 1.0)] # Area=1, Perimeter=4
         rect_vertices = [SVector(0.0,0.0), SVector(2.0,0.0), SVector(2.0,1.0), SVector(0.0,1.0)] # Area=2, Perimeter=6
         arrays.neighborlist.voronoi_vertex_positions_per_particle[1] = square_vertices
         arrays.neighborlist.voronoi_vertex_positions_per_particle[2] = rect_vertices
-        output = Output()
+        output = SelfPropelledVoronoi.Output()
 
-        energy = compute_energy(parameters, arrays, output)
+        energy = SelfPropelledVoronoi.compute_energy(parameters, arrays, output)
         
         energy_cell1 = KA1 * (1.0 - A1_target)^2 + KP1 * (4.0 - P1_target)^2
         energy_cell2 = KA2 * (2.0 - A2_target)^2 + KP2 * (6.0 - P2_target)^2
@@ -210,12 +210,12 @@ end
 end
 
 @testset "DataStructs Constructors" begin
-    using SelfPropelledVoronoi: VoronoiCells, SimulationBox, VoronoiNeighborList, ArrayStruct, Output, DumpInfo, ParameterStruct
+    # Removed: using SelfPropelledVoronoi: VoronoiCells, SimulationBox, VoronoiNeighborList, ArrayStruct, Output, DumpInfo, ParameterStruct
     using Random: MersenneTwister # Already imported in other testsets, but good for clarity
 
     @testset "VoronoiCells Constructor" begin
         p0s = [1.0]; A0s = [1.0]; KPs = [0.1]; KAs = [0.2]; f0s = [0.3]; Drs = [0.4]
-        vc = VoronoiCells(p0s, A0s, KPs, KAs, f0s, Drs)
+        vc = SelfPropelledVoronoi.VoronoiCells(p0s, A0s, KPs, KAs, f0s, Drs)
         @test vc.target_perimeters === p0s
         @test vc.target_areas === A0s
         @test vc.K_P === KPs
@@ -226,13 +226,13 @@ end
 
     @testset "SimulationBox Constructor" begin
         Lx = 10.0; Ly = 20.0
-        sb = SimulationBox(Lx, Ly)
+        sb = SelfPropelledVoronoi.SimulationBox(Lx, Ly)
         @test sb.box_sizes == SVector{2, Float64}(Lx, Ly)
     end
 
     @testset "VoronoiNeighborList Constructor" begin
         N = 3
-        vnl = VoronoiNeighborList(N)
+        vnl = SelfPropelledVoronoi.VoronoiNeighborList(N)
         @test length(vnl.voronoi_neighbors) == N
         @test all(isempty, vnl.voronoi_neighbors)
         @test all(x -> isa(x, Vector{Int64}), vnl.voronoi_neighbors)
@@ -258,7 +258,7 @@ end
 
     @testset "ArrayStruct Constructor" begin
         N = 2
-        as = ArrayStruct(N)
+        as = SelfPropelledVoronoi.ArrayStruct(N)
         @test length(as.positions) == N
         @test all(x -> x == zero(SVector{2, Float64}), as.positions)
         @test length(as.old_positions) == N
@@ -279,12 +279,12 @@ end
         @test length(as.random_forces) == N
         @test all(x -> x == 0.0, as.random_forces)
 
-        @test isa(as.neighborlist, VoronoiNeighborList)
+        @test isa(as.neighborlist, SelfPropelledVoronoi.VoronoiNeighborList)
         @test length(as.neighborlist.voronoi_neighbors) == N
     end
 
     @testset "Output Constructor" begin
-        out = Output()
+        out = SelfPropelledVoronoi.Output()
         @test out.potential_energy == 0.0
         @test out.steps_done == 0
         @test out.N_voronoi_tesselations == 0
@@ -292,7 +292,7 @@ end
 
     @testset "DumpInfo Constructor" begin
         # Default
-        di_default = DumpInfo()
+        di_default = SelfPropelledVoronoi.DumpInfo()
         @test di_default.save == true
         @test startswith(di_default.filename, "dump_")
         @test endswith(di_default.filename, ".h5")
@@ -304,7 +304,7 @@ end
         # Custom
         custom_filename = "custom.h5"
         custom_when_to_save = 1:10:100
-        di_custom = DumpInfo(save=false, filename=custom_filename, when_to_save_array=custom_when_to_save, save_r=false, save_F=true, save_Epot=true)
+        di_custom = SelfPropelledVoronoi.DumpInfo(save=false, filename=custom_filename, when_to_save_array=custom_when_to_save, save_r=false, save_F=true, save_Epot=true)
         @test di_custom.save == false
         @test di_custom.filename == custom_filename
         @test di_custom.when_to_save_array == custom_when_to_save
@@ -315,9 +315,9 @@ end
 
     @testset "ParameterStruct Constructor" begin
         N = 1
-        particles = VoronoiCells([1.0], [1.0], [0.1], [0.2], [0.3], [0.4])
-        box = SimulationBox(10.0, 10.0)
-        dump_info = DumpInfo()
+        particles = SelfPropelledVoronoi.VoronoiCells([1.0], [1.0], [0.1], [0.2], [0.3], [0.4])
+        box = SelfPropelledVoronoi.SimulationBox(10.0, 10.0)
+        dump_info = SelfPropelledVoronoi.DumpInfo()
         rng = MersenneTwister(123)
         
         dt_val = 0.01
@@ -328,7 +328,7 @@ end
         verbose_val = true
         callback_val = nothing
 
-        ps = ParameterStruct(N, dt_val, N_steps_val, kBT_val, frictionconstant_val, pbd_val, verbose_val, box, particles, dump_info, callback_val, rng)
+        ps = SelfPropelledVoronoi.ParameterStruct(N, dt_val, N_steps_val, kBT_val, frictionconstant_val, pbd_val, verbose_val, box, particles, dump_info, callback_val, rng)
 
         @test ps.N == N
         @test ps.dt == dt_val
@@ -565,23 +565,23 @@ end
 end
 
 @testset "Update Positions with PBCs" begin
-    using SelfPropelledVoronoi: ParameterStruct, ArrayStruct, VoronoiCells, SimulationBox, Output, DumpInfo # update_positions_with_pbcs! is not exported
+    # Removed: using SelfPropelledVoronoi: ParameterStruct, ArrayStruct, VoronoiCells, SimulationBox, Output, DumpInfo # update_positions_with_pbcs! is not exported
     using Random: MersenneTwister # Already imported but good for clarity
     # SVector is already imported via StaticArrays at the top level
 
     # Helper to create ParameterStruct and ArrayStruct for tests
     function setup_pbc_test_structs(N, Lx, Ly, initial_positions)
-        box = SimulationBox(Lx, Ly)
+        box = SelfPropelledVoronoi.SimulationBox(Lx, Ly)
         # Using dummy values for most particle and simulation parameters as they don't affect update_positions_with_pbcs! directly
-        particles_data = VoronoiCells(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
-        dump_info = DumpInfo(save=false)
-        parameters = ParameterStruct(N, 0.1, 100, 0.1, 0.1, 2.5, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
+        particles_data = SelfPropelledVoronoi.VoronoiCells(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
+        dump_info = SelfPropelledVoronoi.DumpInfo(save=false)
+        parameters = SelfPropelledVoronoi.ParameterStruct(N, 0.1, 100, 0.1, 0.1, 2.5, false, box, particles_data, dump_info, nothing, MersenneTwister(123))
         
-        arrays = ArrayStruct(N)
+        arrays = SelfPropelledVoronoi.ArrayStruct(N)
         for i in 1:N
             arrays.positions[i] = initial_positions[i]
         end
-        return parameters, arrays, Output()
+        return parameters, arrays, SelfPropelledVoronoi.Output()
     end
 
     @testset "No PBC images needed" begin
