@@ -8,7 +8,8 @@ for file in [
     "DataStructs.jl", 
     "AuxiliaryFunctions.jl",
     "InitialConfiguration.jl", 
-    "Dump.jl", 
+    "Dump.jl",
+    "Load.jl",
     "Forces.jl",
     "Tesselation.jl",
     "Dynamics.jl", 
@@ -18,8 +19,8 @@ for file in [
     include(file) 
 end
 
-export SimulationBox, ParameterStruct, VoronoiCells, ArrayStruct, Output, DumpInfo, VoronoiNeighborList
-export run_simulation!
+export SimulationBox, ParameterStruct, VoronoiCells, ArrayStruct, Output, DumpInfo, VoronoiNeighborList, TrajectoryData
+export run_simulation!, load_simulation_state, load_trajectory
 
 
 end
