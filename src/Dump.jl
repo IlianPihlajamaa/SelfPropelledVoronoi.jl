@@ -1,9 +1,5 @@
 using HDF5
 
-# ParameterStruct, ArrayStruct, Output are expected to be defined elsewhere
-# and available in the scope where this function is called.
-# DumpInfo is part of ParameterStruct.
-
 """
     save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct, output::Output)
 
