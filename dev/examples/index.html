@@ -59,33 +59,45 @@ particles = VoronoiCells(p0, A0, KP, KA, f0, Dr)
 # params: A ParameterStruct structure holding various global simulation settings and constants.
 # The constructor uses keyword arguments.
 params = ParameterStruct(
-    N = N, # Number of particles (already defined)
-    dt = 0.001, # Time step for the numerical integration of equations of motion. 
-                # Smaller values generally lead to higher accuracy but increase computation time.
-                # units: time units.
-    N_steps = 1000, # Total number of simulation steps to perform. The total simulation time will be dt * N_steps.
-    kBT = 1.0, # Thermal energy, product of Boltzmann constant (kB) and Temperature (T). 
-               # This term scales the magnitude of random forces due to thermal fluctuations
-               # units: energy units.
-    frictionconstant = 1.0, # Friction coefficient (gamma). Affects the mobility of the cells (the ratio of the force on the cell and its velocity)
-    periodic_boundary_layer_depth = 2.5, # Depth of the layer used for handling interactions across periodic boundaries.
-                                         # Particles within this distance from a boundary will interact with periodic images of particles 
-                                         # from the opposite side of the simulation box. This value should typically be larger than any interaction cutoffs.
-                                         # units: length units.
-    verbose = true, # If true, the simulation prints progress messages, warnings, or other information to the console.
-    box = sim_box, # The SimulationBox object defining the domain (defined above).
-    particles = particles, # The VoronoiCells object defining particle properties (defined above).
-    dump_info = DumpInfo(save=false), # A DumpInfo structure for controlling data output (e.g., saving simulation snapshots). 
-                                     # Here, &#39;save=false&#39; indicates that no data will be written to disk during this example run.
-                                     # Default DumpInfo settings might otherwise enable saving.
-    callback = (p,a,o) -&gt; nothing, # A user-defined function that is called at the start of every time step during the simulation.
-                                   # &#39;p&#39;, &#39;a&#39;, &#39;o&#39; typically refer to the parameters, arrays, and output structs, respectively.
-                                   # Useful for custom actions like live plotting, on-the-fly analysis, or complex data collection. 
-                                   # Here, it&#39;s a no-operation (no-op) function, meaning nothing custom is done during simulation steps.
-    RNG = Random.MersenneTwister(1234) # Random Number Generator (RNG) instance.
-                                      # `MersenneTwister` is a widely used pseudo-random number generator known for its good statistical properties.
-                                      # Initializing it with a specific seed (1234 here) ensures that the sequence of random numbers
-                                      # generated will be the same every time the simulation is run with this seed. This is crucial for reproducibility.
+    # Number of particles (already defined)
+    N = N, 
+    # Time step for the numerical integration of equations of motion. 
+    # Smaller values generally lead to higher accuracy but increase computation time.
+    # units: time units.
+    dt = 0.001, 
+    # Total number of simulation steps to perform. The total simulation time will be dt * N_steps.
+    N_steps = 1000, 
+     # Thermal energy, product of Boltzmann constant (kB) and Temperature (T). 
+    # This term scales the magnitude of random forces due to thermal fluctuations
+    # units: energy units.
+    kBT = 1.0,
+    # Friction coefficient (gamma). Affects the mobility of the cells (the ratio of the force on the cell and its velocity)
+    frictionconstant = 1.0, 
+    # Depth of the layer used for handling interactions across periodic boundaries.
+    # Particles within this distance from a boundary will interact with periodic images of particles 
+    # from the opposite side of the simulation box. This value should typically be larger than any interaction cutoffs.
+    # units: length units.
+    periodic_boundary_layer_depth = 2.5, 
+    # If true, the simulation prints progress messages, warnings, or other information to the console.
+    verbose = true, 
+    # The SimulationBox object defining the domain (defined above).
+    box = sim_box, 
+    # The VoronoiCells object defining particle properties (defined above).
+    particles = particles, 
+    # A DumpInfo structure for controlling data output (e.g., saving simulation snapshots). 
+    # Here, &#39;save=false&#39; indicates that no data will be written to disk during this example run.
+    # Default DumpInfo settings might otherwise enable saving.
+    dump_info = DumpInfo(save=false), 
+    # A user-defined function that is called at the start of every time step during the simulation.
+    # &#39;p&#39;, &#39;a&#39;, &#39;o&#39; typically refer to the parameters, arrays, and output structs, respectively.
+    # Useful for custom actions like live plotting, on-the-fly analysis, or complex data collection. 
+    # Here, it&#39;s a no-operation (no-op) function, meaning nothing custom is done during simulation steps.
+    callback = (p,a,o) -&gt; nothing, 
+    # Random Number Generator (RNG) instance.
+    # `MersenneTwister` is a widely used pseudo-random number generator known for its good statistical properties.
+    # Initializing it with a specific seed (1234 here) ensures that the sequence of random numbers
+    # generated will be the same every time the simulation is run with this seed. This is crucial for reproducibility.
+    RNG = Random.MersenneTwister(1234) 
 )
 
 # --- Initialize Particle Positions and Orientations ---
@@ -126,4 +138,4 @@ run_simulation!(params, arrays, output)
 # --- Print Simulation Summary ---
 # After the simulation completes, print a message indicating completion and 
 # the total number of steps that were actually performed (which should be stored in output.steps_done).
-println(&quot;Simulation finished. Steps done: $(output.steps_done)&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../overview/">« Overview</a><a class="docs-footer-nextpage" href="../api/">API Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Monday 26 May 2025 14:40">Monday 26 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+println(&quot;Simulation finished. Steps done: $(output.steps_done)&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../overview/">« Overview</a><a class="docs-footer-nextpage" href="../api/">API Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Monday 26 May 2025 14:45">Monday 26 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
