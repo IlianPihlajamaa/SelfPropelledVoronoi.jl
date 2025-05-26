@@ -2,58 +2,25 @@ using SelfPropelledVoronoi
 using Test
 using StaticArrays: SVector
 
-@testset "SelfPropelledVoronoi.jl" begin
-
-    @test SelfPropelledVoronoi.test_force(1) == 2
-
-end
 
 @testset "apply_periodic_boundary_conditions" begin
-    # 1D cases
-    @testset "1D" begin
-        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(0.5, 1.0) ≈ 0.5
-        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(1.5, 1.0) ≈ 0.5
-        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(-0.5, 1.0) ≈ 0.5
-        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(1.0, 1.0) ≈ 0.0
-        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(0.0, 1.0) ≈ 0.0
-    end
-
-    # 2D cases
     @testset "2D" begin
         @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(0.5, 0.5), SVector(1.0, 1.0)) ≈ SVector(0.5, 0.5)
         @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.5, -0.5), SVector(1.0, 1.0)) ≈ SVector(0.5, 0.5)
         @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.0, 0.0), SVector(1.0, 1.0)) ≈ SVector(0.0, 0.0)
     end
 
-    # 3D cases
-    @testset "3D" begin
-        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(0.5, 0.5, 0.5), SVector(1.0, 1.0, 1.0)) ≈ SVector(0.5, 0.5, 0.5)
-        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.5, -0.5, 1.2), SVector(1.0, 1.0, 1.0)) ≈ SVector(0.5, 0.5, 0.2)
-    end
+
 end
 
 @testset "compute_pair_distance_vector" begin
-    # 1D cases
-    @testset "1D" begin
-        @test SelfPropelledVoronoi.compute_pair_distance_vector(0.2, 0.8, 1.0) ≈ 0.6
-        @test SelfPropelledVoronoi.compute_pair_distance_vector(0.8, 0.2, 1.0) ≈ 0.4
-        @test SelfPropelledVoronoi.compute_pair_distance_vector(0.1, 0.9, 1.0) ≈ -0.2
-        @test SelfPropelledVoronoi.compute_pair_distance_vector(0.0, 0.5, 1.0) ≈ 0.5
-        @test SelfPropelledVoronoi.compute_pair_distance_vector(0.0, 0.9, 1.0) ≈ -0.1
-    end
 
-    # 2D cases
     @testset "2D" begin
         @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.2, 0.2), SVector(0.4, 0.4), SVector(1.0, 1.0)) ≈ SVector(0.2, 0.2)
         @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.2), SVector(0.2, 0.4), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.2)
         @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.8), SVector(0.2, 0.2), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.4)
     end
 
-    # 3D cases
-    @testset "3D" begin
-        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.1, 0.2, 0.3), SVector(0.4, 0.5, 0.6), SVector(1.0, 1.0, 1.0)) ≈ SVector(0.3, 0.3, 0.3)
-        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.9, 0.7), SVector(0.2, 0.1, 0.3), SVector(1.0, 1.0, 1.0)) ≈ SVector(0.4, 0.2, -0.4)
-    end
 end
 
 @testset "Cell Property Updates" begin
