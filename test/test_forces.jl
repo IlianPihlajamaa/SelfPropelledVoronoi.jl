@@ -140,7 +140,10 @@ using StaticArrays
     Random.seed!(random_seed)
     dump_info = DumpInfo(save=false)
     callback = (p,a,o) -> nothing
-    parameter_struct = ParameterStruct(N, dt, Nsteps, kBT, frictionconstant, pbc_layer_depth, false, box, voronoi_cells, dump_info, callback, MersenneTwister(random_seed))
+    parameter_struct = ParameterStruct(N=N, dt=dt, N_steps=Nsteps, kBT=kBT, frictionconstant=frictionconstant, 
+                                        periodic_boundary_layer_depth=pbc_layer_depth, verbose=false, 
+                                        box=box, particles=voronoi_cells, dump_info=dump_info, 
+                                        callback=callback, RNG=MersenneTwister(random_seed))
 
     # Create ArrayStruct
     arrays = ArrayStruct(N)
@@ -224,8 +227,10 @@ end
     Random.seed!(random_seed)
     dump_info = DumpInfo(save=false)
     callback = (p,a,o) -> nothing
-    parameter_struct_gcm = ParameterStruct(N, dt, Nsteps, kBT, frictionconstant, pbc_layer_depth, false, box, voronoi_cells, dump_info, callback, MersenneTwister(random_seed))
-
+    parameter_struct_gcm = ParameterStruct(N=N, dt=dt, N_steps=Nsteps, kBT=kBT, frictionconstant=frictionconstant, 
+                                            periodic_boundary_layer_depth=pbc_layer_depth, verbose=false, 
+                                            box=box, particles=voronoi_cells, dump_info=dump_info, 
+                                            callback=callback, RNG=MersenneTwister(random_seed))
     # Create ArrayStruct
     arrays_gcm = ArrayStruct(N)
 
