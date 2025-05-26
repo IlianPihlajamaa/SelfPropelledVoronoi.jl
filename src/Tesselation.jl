@@ -195,7 +195,7 @@ function voronoi_tesselation!(parameters, arrays, output)
         k = facet[3] # This is idx3_pbc
 
         
-        sorted_triplet = NTuple{3, Int}(i,j,k)
+        sorted_triplet = (i,j,k)
         
         if !(sorted_triplet in arrays.neighborlist.delaunay_facet_triplets)
             push!(arrays.neighborlist.delaunay_facet_triplets, sorted_triplet)

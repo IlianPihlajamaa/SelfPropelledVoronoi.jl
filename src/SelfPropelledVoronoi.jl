@@ -1,6 +1,6 @@
 
 module SelfPropelledVoronoi
-import LoopVectorization, Quickhull, Random, HDF5
+import  Quickhull, Random, HDF5
 using SmallCollections: MutableSmallVector
 using StaticArrays: SVector
 

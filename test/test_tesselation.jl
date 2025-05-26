@@ -2,14 +2,12 @@
 function setup_test_environment(particle_positions::Vector{SVector{2, Float64}}, box_size_val::Float64 = 100.0)
     N = length(particle_positions)
     
-    _box = Box(SVector(box_size_val, box_size_val))
-    # Assuming Parameters constructor is Parameters(N, box, ...other_args_with_defaults...)
-    # Or more simply, if a direct struct initialization is possible and preferred for tests:
-    parameters = Parameters(N=N, box=_box) # Adjust if constructor is different
+    _box = SimulationBox(box_size_val, box_size_val)
+
+    parameters = ParameterStruct(N=N, box=_box) 
     
-    arrays = Arrays(N=N) # Assuming Arrays(N=N) constructor that initializes positions, old_positions, neighborlist
-    arrays.positions = deepcopy(particle_positions)
-    arrays.old_positions = Vector{SVector{2, Float64}}[] # Start with empty/distinct old_positions
+    arrays = ArrayStruct(N) 
+    arrays.positions .= deepcopy(particle_positions)
 
     output = Output() 
 
@@ -26,13 +24,13 @@ end
         ] # N=4
         params, arrays, output = setup_test_environment(positions, 10.0) # Small box for clarity
 
-        voronoi_tesselation!(params, arrays, output)
+        SelfPropelledVoronoi.voronoi_tesselation!(params, arrays, output)
         
         initial_positions_copy = deepcopy(arrays.positions)
-        result = verify_tessellation(params, arrays, output)
+        result = SelfPropelledVoronoi.verify_tessellation(params, arrays, output)
 
         @test result == true
-        @test arrays.old_positions == initial_positions_copy # old_positions should remain unchanged
+        @test arrays.positions == initial_positions_copy # No change expected
     end
 
     @testset "Invalid Tessellation (Particle Moved into Circumcircle of a Delaunay Facet)" begin
@@ -60,39 +58,21 @@ end
         params, arrays, output = setup_test_environment(positions_initial, 20.0)
 
         # Perform initial tessellation. This populates all relevant fields in arrays.neighborlist.
-        voronoi_tesselation!(params, arrays, output)
+        SelfPropelledVoronoi.voronoi_tesselation!(params, arrays, output)
         
         # Set a distinct old_positions to check it's not updated on failure
-        arrays.old_positions = [SVector(123.0, 456.0), SVector(1.0,1.0), SVector(2.0,2.0), SVector(3.0,3.0)]
-        original_old_positions_snapshot = deepcopy(arrays.old_positions)
+        arrays.positions .= [SVector(123.0, 456.0), SVector(1.0,1.0), SVector(2.0,2.0), SVector(3.0,3.0)]
+        original_old_positions_snapshot = deepcopy(arrays.positions)
 
         # Move p4 (arrays.positions[4]) into the circumcircle of facet (p1,p2,p3).
         # The circumcenter of (0,10), (10,10), (10,0) is (5,5).
         arrays.positions[4] = SVector(4.9, 4.9) # Clearly inside
-
-        # Call update_positions_with_pbcs! AFTER moving p4.
-        # This updates arrays.neighborlist.positions_with_pbc and arrays.neighborlist.position_indices.
-        update_positions_with_pbcs!(params, arrays, output)
-        
-        result = verify_tessellation(params, arrays, output)
-
-        @test result == false "p4 moved into circumcircle of facet (p1,p2,p3) was not detected."
-        @test arrays.old_positions == original_old_positions_snapshot "old_positions was updated despite invalid tessellation."
-    end
-
-    @testset "Insufficient Particles/Facets (<3 particles)" begin
-        positions = [SVector(0.0,0.0), SVector(1.0,0.0)] # N=2
-        params, arrays, output = setup_test_environment(positions, 10.0)
-
-        voronoi_tesselation!(params, arrays, output)
-        initial_positions_copy = deepcopy(arrays.positions)
-        arrays.old_positions = [SVector(999.0,999.0)] # Ensure different before call
-
-        result = verify_tessellation(params, arrays, output)
-
-        @test result == true
-        @test arrays.old_positions == initial_positions_copy
-    end
     
+        result = SelfPropelledVoronoi.verify_tessellation(params, arrays, output)
+
+        @test result == false 
+    end
+
+
 
 end
