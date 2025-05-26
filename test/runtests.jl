@@ -1,9 +1,8 @@
 using SelfPropelledVoronoi
 using Test
+using HDF5
 using StaticArrays
-
-
-
+import Random
 
 
 @testset "apply_periodic_boundary_conditions" begin
@@ -29,3 +28,4 @@ end
 
 include("test_forces.jl")
 include("test_tesselation.jl")
+include("test_loading_and_saving.jl")
