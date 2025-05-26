@@ -194,12 +194,8 @@ function voronoi_tesselation!(parameters, arrays, output)
         j = facet[2] # This is idx2_pbc
         k = facet[3] # This is idx3_pbc
 
-        # Populate delaunay_facet_triplets with original particle indices
-        orig_idx1 = arrays.neighborlist.position_indices[i]
-        orig_idx2 = arrays.neighborlist.position_indices[j]
-        orig_idx3 = arrays.neighborlist.position_indices[k]
         
-        sorted_triplet = NTuple{3, Int}(sort([orig_idx1, orig_idx2, orig_idx3]))
+        sorted_triplet = NTuple{3, Int}(i,j,k)
         
         if !(sorted_triplet in arrays.neighborlist.delaunay_facet_triplets)
             push!(arrays.neighborlist.delaunay_facet_triplets, sorted_triplet)
@@ -368,88 +364,58 @@ end
 """
     verify_tesselation(parameters, arrays, output)
 
-Checks if the current Voronoi tessellation stored in `arrays.neighborlist` is still
-considered valid. This function is intended to be used to determine if a full
-re-tessellation is necessary, potentially saving computational cost if the
-tessellation can be assumed to be stable under small particle displacements.
-
-**Note:** The current implementation is a placeholder and always returns `false`.
-This means that, with the current logic, the system will always perform a full
-re-tessellation in every step where this check is made (e.g., in `compute_forces_SPV!`).
+Verifies the validity of the Voronoi tessellation by checking if all particles
+are correctly positioned with respect to the Delaunay facets of the tessellation.
+This function checks that for each Delaunay facet (triangle) defined by a triplet of particles,
+the circumcircle of the triangle does not contain any other particle that is not one of the triangle's vertices.
+# Arguments
+- `parameters::ParameterStruct`: The main simulation parameter struct, providing the number of particles `N`.
+- `arrays::ArrayStruct`: The struct holding simulation arrays, including positions and neighbor lists.
+- `output::Output`: The simulation output struct. Not directly used in this function but included for consistency in function signatures.
+# Returns
+- `Bool`: Returns `true` if the tessellation is valid (no violations found), or `false` if any particle is found within the circumcircle of a Delaunay facet that is not one of its vertices.
+# Notes
+- The function assumes that the Voronoi tessellation has already been computed and that the necessary fields in `arrays.neighborlist` are populated, including `delaunay_facet_triplets`, `positions_with_pbc`, and `voronoi_neighbors`.
+- The field arrays.neighborlist.positions_with_pbc is updated to include periodic boundary conditions.
 """
 function verify_tessellation(parameters, arrays, output)
     epsilon = 1e-9
-    # N = parameters.N # Not directly used in main loop, but good for context
-    
+    update_positions_with_pbcs!(parameters, arrays, output)
+
     # Iterate through each pre-computed Delaunay facet triplet
-    for triplet_orig_indices in arrays.neighborlist.delaunay_facet_triplets
-        p1_idx, p2_idx, p3_idx = triplet_orig_indices
+    for triplet_indices in arrays.neighborlist.delaunay_facet_triplets
+        p1_idx, p2_idx, p3_idx = triplet_indices
 
         # Fetch positions directly from arrays.positions using original indices
-        pos1 = arrays.positions[p1_idx]
-        pos2 = arrays.positions[p2_idx]
-        pos3 = arrays.positions[p3_idx]
+        pos1 = arrays.neighborlist.positions_with_pbc[p1_idx]
+        pos2 = arrays.neighborlist.positions_with_pbc[p2_idx]
+        pos3 = arrays.neighborlist.positions_with_pbc[p3_idx]
 
         # Calculate circumcenter and circumradius squared
         C = circumcenter(pos1, pos2, pos3)
         R_sq = norm2(pos1 - C) # Radius squared from first point of triplet to center
 
-        # Identify particles to check (Neighbors of Neighbors - NoN)
-        test_particle_indices = Set{Int}()
-        for orig_particle_idx_in_triplet in triplet_orig_indices
-            # Neighbors of orig_particle_idx_in_triplet are stored as PBC indices
-            # arrays.neighborlist.voronoi_neighbors is indexed by original particle index (1 to N)
-            # up to parameters.N. The actual list of neighbors might be longer if N_pbc > N.
-            # The problem description for voronoi_neighbors_list[i] in the previous version of verify_tessellation
-            # stated: "Primary particles are indexed 1 to N. Their direct entries in voronoi_neighbors_list 
-            # (which is sized for N_pbc) correspond to these."
-            # This implies voronoi_neighbors should be indexed up to N.
-            # Let's assume voronoi_neighbors is indexed 1..N for primary particles.
-            if orig_particle_idx_in_triplet <= parameters.N && orig_particle_idx_in_triplet <= length(arrays.neighborlist.voronoi_neighbors)
-                for neighbor_pbc_idx in arrays.neighborlist.voronoi_neighbors[orig_particle_idx_in_triplet]
-                    # Ensure neighbor_pbc_idx is valid for position_indices
-                    if neighbor_pbc_idx > 0 && neighbor_pbc_idx <= length(arrays.neighborlist.position_indices)
-                        original_neighbor_idx = arrays.neighborlist.position_indices[neighbor_pbc_idx]
-                        push!(test_particle_indices, original_neighbor_idx)
-                    else
-                        # This case might indicate an issue with neighbor_pbc_idx from voronoi_neighbors list
-                        # Or that position_indices is not fully populated for all pbc indices encountered.
-                        # Depending on system guarantees, one might error or warn here.
-                        # For now, skip if index is invalid.
-                        # println("Warning: Invalid neighbor_pbc_idx $neighbor_pbc_idx encountered for triplet particle $orig_particle_idx_in_triplet")
-                        continue
+        for particle_idx_in_triplet in triplet_indices
+            # only consider particles that are within the original particle count
+            # This ensures we only check particles that are part of the original set
+            if particle_idx_in_triplet <= parameters.N 
+                for neighbor_pbc_idx in arrays.neighborlist.voronoi_neighbors[particle_idx_in_triplet]
+                    if neighbor_pbc_idx in triplet_indices
+                        continue # Skip if the neighbor is one of the triplet vertices
+                    end
+
+                    # Fetch the position of the test particle
+                    p_test = arrays.neighborlist.positions_with_pbc[neighbor_pbc_idx]
+                    # Calculate squared distance to circumcenter
+                    d_sq = norm2(p_test - C)
+                    # Check for Delaunay violation
+                    if d_sq < R_sq - epsilon
+                        # A violation is found, return false
+                        return false
                     end
                 end
             end
         end
-
-        # Perform the check for each identified test particle
-        for p_test_orig_idx in test_particle_indices
-            # Ensure p_test_orig_idx is not one of the triplet vertices themselves
-            if p_test_orig_idx == p1_idx || p_test_orig_idx == p2_idx || p_test_orig_idx == p3_idx
-                continue
-            end
-
-            # Fetch the test particle's position
-            # Ensure p_test_orig_idx is a valid index for arrays.positions
-            if p_test_orig_idx <= 0 || p_test_orig_idx > length(arrays.positions)
-                # This indicates an issue with the original_neighbor_idx obtained.
-                # println("Warning: Invalid p_test_orig_idx $p_test_orig_idx derived.")
-                continue
-            end
-            p_test = arrays.positions[p_test_orig_idx]
-
-            # Calculate squared distance to circumcenter
-            d_sq = norm2(p_test - C)
-
-            # Check for Delaunay violation
-            if d_sq < R_sq - epsilon
-                return false # Violation found
-            end
-        end
     end
-
-    # If all checks pass
-    arrays.old_positions = deepcopy(arrays.positions)
     return true
 end
