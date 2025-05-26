@@ -77,8 +77,6 @@ for i in 1:N
     arrays.positions[i] = SVector(rand(params.RNG)*box_Lx, rand(params.RNG)*box_Ly)
     arrays.orientations[i] = 2pi * rand(params.RNG)
 end
-arrays.old_positions .= arrays.positions
-arrays.old_orientations .= arrays.orientations
 
 # Initialize output struct
 output = Output()
