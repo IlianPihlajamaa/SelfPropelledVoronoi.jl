@@ -67,33 +67,45 @@ particles = VoronoiCells(p0, A0, KP, KA, f0, Dr)
 # params: A ParameterStruct structure holding various global simulation settings and constants.
 # The constructor uses keyword arguments.
 params = ParameterStruct(
-    N = N, # Number of particles (already defined)
-    dt = 0.001, # Time step for the numerical integration of equations of motion. 
-                # Smaller values generally lead to higher accuracy but increase computation time.
-                # units: time units.
-    N_steps = 1000, # Total number of simulation steps to perform. The total simulation time will be dt * N_steps.
-    kBT = 1.0, # Thermal energy, product of Boltzmann constant (kB) and Temperature (T). 
-               # This term scales the magnitude of random forces due to thermal fluctuations
-               # units: energy units.
-    frictionconstant = 1.0, # Friction coefficient (gamma). Affects the mobility of the cells (the ratio of the force on the cell and its velocity)
-    periodic_boundary_layer_depth = 2.5, # Depth of the layer used for handling interactions across periodic boundaries.
-                                         # Particles within this distance from a boundary will interact with periodic images of particles 
-                                         # from the opposite side of the simulation box. This value should typically be larger than any interaction cutoffs.
-                                         # units: length units.
-    verbose = true, # If true, the simulation prints progress messages, warnings, or other information to the console.
-    box = sim_box, # The SimulationBox object defining the domain (defined above).
-    particles = particles, # The VoronoiCells object defining particle properties (defined above).
-    dump_info = DumpInfo(save=false), # A DumpInfo structure for controlling data output (e.g., saving simulation snapshots). 
-                                     # Here, 'save=false' indicates that no data will be written to disk during this example run.
-                                     # Default DumpInfo settings might otherwise enable saving.
-    callback = (p,a,o) -> nothing, # A user-defined function that is called at the start of every time step during the simulation.
-                                   # 'p', 'a', 'o' typically refer to the parameters, arrays, and output structs, respectively.
-                                   # Useful for custom actions like live plotting, on-the-fly analysis, or complex data collection. 
-                                   # Here, it's a no-operation (no-op) function, meaning nothing custom is done during simulation steps.
-    RNG = Random.MersenneTwister(1234) # Random Number Generator (RNG) instance.
-                                      # `MersenneTwister` is a widely used pseudo-random number generator known for its good statistical properties.
-                                      # Initializing it with a specific seed (1234 here) ensures that the sequence of random numbers
-                                      # generated will be the same every time the simulation is run with this seed. This is crucial for reproducibility.
+    # Number of particles (already defined)
+    N = N, 
+    # Time step for the numerical integration of equations of motion. 
+    # Smaller values generally lead to higher accuracy but increase computation time.
+    # units: time units.
+    dt = 0.001, 
+    # Total number of simulation steps to perform. The total simulation time will be dt * N_steps.
+    N_steps = 1000, 
+     # Thermal energy, product of Boltzmann constant (kB) and Temperature (T). 
+    # This term scales the magnitude of random forces due to thermal fluctuations
+    # units: energy units.
+    kBT = 1.0,
+    # Friction coefficient (gamma). Affects the mobility of the cells (the ratio of the force on the cell and its velocity)
+    frictionconstant = 1.0, 
+    # Depth of the layer used for handling interactions across periodic boundaries.
+    # Particles within this distance from a boundary will interact with periodic images of particles 
+    # from the opposite side of the simulation box. This value should typically be larger than any interaction cutoffs.
+    # units: length units.
+    periodic_boundary_layer_depth = 2.5, 
+    # If true, the simulation prints progress messages, warnings, or other information to the console.
+    verbose = true, 
+    # The SimulationBox object defining the domain (defined above).
+    box = sim_box, 
+    # The VoronoiCells object defining particle properties (defined above).
+    particles = particles, 
+    # A DumpInfo structure for controlling data output (e.g., saving simulation snapshots). 
+    # Here, 'save=false' indicates that no data will be written to disk during this example run.
+    # Default DumpInfo settings might otherwise enable saving.
+    dump_info = DumpInfo(save=false), 
+    # A user-defined function that is called at the start of every time step during the simulation.
+    # 'p', 'a', 'o' typically refer to the parameters, arrays, and output structs, respectively.
+    # Useful for custom actions like live plotting, on-the-fly analysis, or complex data collection. 
+    # Here, it's a no-operation (no-op) function, meaning nothing custom is done during simulation steps.
+    callback = (p,a,o) -> nothing, 
+    # Random Number Generator (RNG) instance.
+    # `MersenneTwister` is a widely used pseudo-random number generator known for its good statistical properties.
+    # Initializing it with a specific seed (1234 here) ensures that the sequence of random numbers
+    # generated will be the same every time the simulation is run with this seed. This is crucial for reproducibility.
+    RNG = Random.MersenneTwister(1234) 
 )
 
 # --- Initialize Particle Positions and Orientations ---
