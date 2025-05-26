@@ -14,7 +14,7 @@ See Bi, Dapeng, et al. "Motility-driven glass and jamming transitions in biologi
 
 ## Installation
 
-Currently, `SelfPropelledVoronoi.jl` is used as a local package. To use it, you first need to ensure its dependencies are installed in your Julia environment.
+Currently, `SelfPropelledVoronoi.jl` is not registered. To install it, run:
 
 ```julia
 # From the Julia REPL
