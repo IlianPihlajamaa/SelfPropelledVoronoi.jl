@@ -201,7 +201,12 @@ end
 
 
 """
-    ParameterStruct(N, dt, N_steps, kBT, frictionconstant, periodic_boundary_layer_depth, verbose, box, particles, dump_info, callback, RNG)
+    ParameterStruct(N =100, dt = 0.01, N_steps = 10000, kBT = 1.0, frictionconstant = 1.0,
+                    periodic_boundary_layer_depth = 1.0, verbose = false, box = SimulationBox(10.0, 10.0),
+                    particles = VoronoiCells(zeros(Float64, 100), zeros(Float64, 100), zeros(Float64, 100),
+                                              zeros(Float64, 100), ones(Float64, 100), ones(Float64, 100)),
+                    dump_info = DumpInfo(), callback = x -> nothing,
+                    RNG = Random.MersenneTwister(1234))
 
 A struct that holds all essential parameters for running a simulation.
 This includes physical parameters, numerical parameters, and settings for I/O and control.
