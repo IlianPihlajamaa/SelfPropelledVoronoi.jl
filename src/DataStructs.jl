@@ -1,13 +1,4 @@
-"""
-This module defines the various data structures used in the SelfPropelledVoronoi simulation.
-These structures are used to store information about:
-- Particles: `VoronoiCells` (e.g., target perimeters, target areas, mechanical properties, active force strengths, rotational diffusion constants).
-- Simulation Box: `SimulationBox` (e.g., dimensions of the simulation area).
-- Neighbor Lists: `VoronoiNeighborList` (e.g., Voronoi neighbors, vertex positions, and related topological information).
-- Simulation Arrays: `ArrayStruct` (e.g., positions, forces, orientations, areas, perimeters of particles).
-- Simulation Parameters: `ParameterStruct` (e.g., number of particles, timestep, total steps, temperature, friction, random number generator).
-- Output Data: `Output` (e.g., potential energy, simulation progress) and `DumpInfo` (e.g., settings for saving simulation data).
-"""
+
 abstract type Particles end
 
 """
@@ -224,4 +215,42 @@ struct ParameterStruct{P<:Particles, CB}
     dump_info::DumpInfo
     callback::CB
     RNG::Random.MersenneTwister
+    function ParameterStruct(;
+        N::Int=100,
+        dt::Float64=0.01,
+        N_steps::Int=10000,
+        kBT::Float64=1.0,
+        frictionconstant::Float64=1.0,
+        periodic_boundary_layer_depth::Float64=1.0,
+        verbose::Bool=false,
+        box::SimulationBox=SimulationBox(10.0, 10.0),
+        particles=VoronoiCells(
+            zeros(Float64, 100),  # target_perimeters
+            zeros(Float64, 100),  # target_areas
+            zeros(Float64, 100),  # K_P
+            zeros(Float64, 100),  # K_A
+            ones(Float64, 100),   # active_force_strengths
+            ones(Float64, 100)    # rotational_diffusion_constants
+        ),
+        dump_info::DumpInfo=DumpInfo(),
+        callback=x->nothing,  # Default callback does nothing
+        RNG::Random.MersenneTwister=Random.MersenneTwister(1234)
+    ) 
+        return new{typeof(particles), typeof(callback)}(
+            N,
+            dt,
+            N_steps,
+            kBT,
+            frictionconstant,
+            periodic_boundary_layer_depth,
+            verbose,
+            box,
+            particles,
+            dump_info,
+            callback,
+            RNG
+        )
+    end
+        
 end
+

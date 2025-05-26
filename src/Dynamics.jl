@@ -1,10 +1,4 @@
-"""
-This module implements the time evolution of the simulated system.
-It is responsible for:
-- Calculating forces acting on particles: This includes forces derived from the Voronoi tessellation (e.g., area and perimeter elasticity) via `compute_forces_SPV!`, and potentially other interaction models like the Gaussian Core Model (`compute_forces_GCM!`).
-- Integrating the equations of motion: It uses numerical integration schemes to update particle positions and orientations over time. Different integrators like Euler-Murayama (`do_time_step_Euler_Murayama`) and Euler-Heun (`do_time_step_Euler_Heun!`) are implemented.
-- Managing the main simulation loop: The `run_simulation!` function orchestrates the simulation steps, including force computation, integration, and data dumping.
-"""
+
 """
     compute_forces_SPV!(parameters, arrays, output)
 
@@ -78,10 +72,11 @@ function compute_forces_SPV!(parameters, arrays, output)
 
         # part 1: -dEi/dri
         for j in eachindex(voronoi_indices[particle_i]) # loop over all h
+            next = j % length(voronoi_vertices_per_particle[particle_i]) + 1
+            prev = j == 1 ? length(voronoi_vertices_per_particle[particle_i]) : j - 1
+            
             h_i_j = voronoi_vertices_per_particle[particle_i][j]
-            next = j % length(voronoi_neighbors[particle_i]) + 1
             h_i_jp1 = voronoi_vertices_per_particle[particle_i][next]
-            prev = j - 1 == 0 ? length(voronoi_neighbors[particle_i]) : j - 1
             h_i_jm1 = voronoi_vertices_per_particle[particle_i][prev]
 
             # compute the distance between h_i_j and h_i_jp1
@@ -148,55 +143,55 @@ function compute_forces_SPV!(parameters, arrays, output)
 
             #find the two common vertices h and g that occur both in the voronoi_vertices of i and of j
             Nfound = 0
-            for vertex_k in voronoi_indices[particle_j]
-                if vertex_k in voronoi_indices[particle_i]
-                    Nfound += 1
-                    common_vertices[Nfound] = vertex_k                    
-                end
-            end
-            if Nfound != 2
-                error("Error: neighborlist does not contain two common voronoi vertices")
-            end
+            # for vertex_k in voronoi_indices[particle_j]
+            #     if vertex_k in voronoi_indices[particle_i]
+            #         Nfound += 1
+            #         common_vertices[Nfound] = vertex_k                    
+            #     end
+            # end
+            # if Nfound != 2
+            #     error("Error: neighborlist does not contain two common voronoi vertices")
+            # end
 
-            h = voronoi_vertices[common_vertices[1]]
-            g = voronoi_vertices[common_vertices[2]]
+            # h = voronoi_vertices[common_vertices[1]]
+            # g = voronoi_vertices[common_vertices[2]]
 
-            # h is the first common vertex, g is the second common vertex by counterclockwise order around j
+            # # h is the first common vertex, g is the second common vertex by counterclockwise order around j
 
-            dAj_dhx = 0.0
-            dAj_dhy = 0.0
-            dAj_dgx = 0.0
-            dAj_dgy = 0.0
-            dPj_dhx = 0.0
-            dPj_dhy = 0.0
-            dPj_dgx = 0.0
-            dPj_dgy = 0.0
+            # dAj_dhx = 0.0
+            # dAj_dhy = 0.0
+            # dAj_dgx = 0.0
+            # dAj_dgy = 0.0
+            # dPj_dhx = 0.0
+            # dPj_dhy = 0.0
+            # dPj_dgx = 0.0
+            # dPj_dgy = 0.0
 
-            dhx_dxi = 0.0
-            dhx_dyi = 0.0
-            dhy_dxi = 0.0
-            dhy_dyi = 0.0
-            dgx_dxi = 0.0
-            dgx_dyi = 0.0
-            dgy_dxi = 0.0
-            dgy_dyi = 0.0
+            # dhx_dxi = 0.0
+            # dhx_dyi = 0.0
+            # dhy_dxi = 0.0
+            # dhy_dyi = 0.0
+            # dgx_dxi = 0.0
+            # dgx_dyi = 0.0
+            # dgy_dxi = 0.0
+            # dgy_dyi = 0.0
             
-            dAj_dxi = dAj_dhx*dhx_dxi + dAj_dhy*dhy_dxi + 
-                      dAj_dgx*dgx_dxi + dAj_dgy*dgy_dxi
-            dAj_dyi = dAj_dhx*dhx_dyi + dAj_dhy*dhy_dyi + 
-                      dAj_dgx*dgx_dyi + dAj_dgy*dgy_dyi
-            dPj_dxi = dPj_dhx*dhx_dxi + dPj_dhy*dhy_dxi + 
-                      dPj_dgx*dgx_dxi + dPj_dgy*dgy_dxi
-            dPj_dyi = dPj_dhx*dhx_dyi + dPj_dhy*dhy_dyi + 
-                      dPj_dgx*dgx_dyi + dPj_dgy*dgy_dyi
+            # dAj_dxi = dAj_dhx*dhx_dxi + dAj_dhy*dhy_dxi + 
+            #           dAj_dgx*dgx_dxi + dAj_dgy*dgy_dxi
+            # dAj_dyi = dAj_dhx*dhx_dyi + dAj_dhy*dhy_dyi + 
+            #           dAj_dgx*dgx_dyi + dAj_dgy*dgy_dyi
+            # dPj_dxi = dPj_dhx*dhx_dxi + dPj_dhy*dhy_dxi + 
+            #           dPj_dgx*dgx_dxi + dPj_dgy*dgy_dxi
+            # dPj_dyi = dPj_dhx*dhx_dyi + dPj_dhy*dhy_dyi + 
+            #           dPj_dgx*dgx_dyi + dPj_dgy*dgy_dyi
             
 
 
-            dEj_dxi = dEj_dAj*dAj_dxi + dEj_dPj*dPj_dxi
-            dEj_dyi = dEj_dAj*dAj_dyi + dEj_dPj*dPj_dyi
+            # dEj_dxi = dEj_dAj*dAj_dxi + dEj_dPj*dPj_dxi
+            # dEj_dyi = dEj_dAj*dAj_dyi + dEj_dPj*dPj_dyi
 
-            Fx -= dEj_dxi
-            Fy -= dEj_dyi
+            # Fx -= dEj_dxi
+            # Fy -= dEj_dyi
             
         end 
 
@@ -535,7 +530,7 @@ function run_simulation!(parameters, arrays, output)
         # Check if the simulation should be stopped
         step = step + 1
         output.steps_done = step
-        if step > parameters.N_steps
+        if step >= parameters.N_steps
             break
         end
     end

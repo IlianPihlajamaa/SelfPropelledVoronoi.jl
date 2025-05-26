@@ -1,16 +1,5 @@
 
 """
-This module is responsible for performing the Voronoi tesselation of the system.
-Key functionalities include:
-- Updating particle positions to account for periodic boundary conditions before tesselation (`update_positions_with_pbcs!`).
-- Performing the Voronoi tesselation itself, typically by first computing the Delaunay triangulation and then deriving Voronoi cells (`voronoi_tesselation!`). This involves:
-    - Identifying Voronoi neighbors for each particle.
-    - Determining the vertices of each Voronoi cell.
-    - Calculating geometric properties like circumcenters of Delaunay triangles, which correspond to Voronoi vertices (`circumcenter`).
-- Sorting Voronoi vertices for consistent cell representation (`sort_indices_counter_clockwise`).
-- Helper functions for managing and verifying the tesselation data (`verify_tesselation`, `update_delauney_vertices!`).
-"""
-"""
     replace_or_push!(array, value, index)
 
 Modifies an `array` in-place by either replacing an element at a specified `index` or
@@ -66,18 +55,11 @@ are stored in the `arrays.neighborlist` structure.
 
 # Arguments
 - `parameters::ParameterStruct`: The main simulation parameter struct, providing:
-    - `N::Int`: The number of original particles.
-    - `box.box_sizes::SVector{2, Float64}`: Dimensions (Lx, Ly) of the simulation box.
-    - `periodic_boundary_layer_depth::Float64`: The depth of the layer for including periodic images. **Note:** Currently, this parameter is overridden by a hardcoded value of `2.5` within the function.
 - `arrays::ArrayStruct`: The struct holding simulation arrays.
-    - `arrays.positions::Vector{SVector{2, Float64}}`: The original positions of all particles.
-    - `arrays.neighborlist.positions_with_pbc::Vector{SVector{2, Float64}}`: This field is cleared and then populated in-place with the original positions and their relevant periodic images.
-    - `arrays.neighborlist.position_indices::Vector{Int64}`: This field is cleared and then populated in-place with the original particle index corresponding to each position in `positions_with_pbc`.
 - `output::Output`: The simulation output struct. Not directly used in this function but included for consistency in function signatures.
 
 # Notes
 - The fields `arrays.neighborlist.positions_with_pbc` and `arrays.neighborlist.position_indices` are modified in-place.
-- The `pbc_layer_depth` used for determining which images to include is currently hardcoded to `2.5` inside the function, not taken from `parameters.periodic_boundary_layer_depth`.
 """
 function update_positions_with_pbcs!(parameters, arrays, output)
     # add positions for to arrays.positions for pbcs
@@ -86,7 +68,7 @@ function update_positions_with_pbcs!(parameters, arrays, output)
     positions = arrays.positions
     N = parameters.N
     Lx, Ly = parameters.box.box_sizes
-    pbc_layer_depth = 2.5
+    pbc_layer_depth = parameters.periodic_boundary_layer_depth
     # add positions for to arrays.positions for pbcs
     # only considering a layer of particles with depth D_pbc
     N_particles = 0
@@ -176,12 +158,8 @@ The process involves:
 5.  **Store Results**: All computed lists (global Voronoi vertices, neighbors per particle, vertex indices per particle, vertex positions per particle, and cell centers sharing a vertex) are stored in the corresponding fields of `arrays.neighborlist`.
 
 # Arguments
-- `parameters::ParameterStruct`: The main simulation parameter struct, providing:
-    - `N::Int`: The number of original (non-periodic image) particles.
-    - `box.box_sizes::SVector{2, Float64}`: Dimensions (Lx, Ly) of the simulation box, used by `update_positions_with_pbcs!` and `sort_indices_counter_clockwise`.
+- `parameters::ParameterStruct`: The main simulation parameter struct.
 - `arrays::ArrayStruct`: The struct holding simulation arrays.
-    - `arrays.positions::Vector{SVector{2, Float64}}`: Used by `update_positions_with_pbcs!` (indirectly) and by `sort_indices_counter_clockwise` as the center for sorting vertices of original particles.
-    - `arrays.neighborlist`: This substructure is extensively modified in-place. Its fields (`voronoi_vertices`, `voronoi_neighbors`, `voronoi_vertex_indices`, `voronoi_vertex_positions_per_particle`, `cell_centers_that_share_a_vertex`, `positions_with_pbc`, `position_indices`) are populated with the results of the tessellation.
 - `output::Output`: The simulation output struct. Passed to `update_positions_with_pbcs!`.
 
 # Notes
@@ -257,7 +235,7 @@ function voronoi_tesselation!(parameters, arrays, output)
     for particle in 1:parameters.N
         voronoi_center = arrays.positions[particle]
         # sort the voronoi vertex indices counterclockwise
-        voronoi_vertex_indices_new, voronoi_vertex_positions_per_particle_new = sort_indices_counter_clockwise(voronoi_vertex_indices[particle], voronoi_vertex_positions_per_particle[particle], voronoi_vertices, voronoi_center, Lx, Ly)
+        voronoi_vertex_indices_new, voronoi_vertex_positions_per_particle_new = sort_indices_counter_clockwise(voronoi_vertex_indices[particle], voronoi_vertex_positions_per_particle[particle], voronoi_vertices, voronoi_center)
         # replace the voronoi vertex indices with the new ones
         voronoi_vertex_indices[particle] = voronoi_vertex_indices_new
         voronoi_vertex_positions_per_particle[particle] = voronoi_vertex_positions_per_particle_new
@@ -294,11 +272,8 @@ naturally provides an ordering for CCW sorting.
 - `Tuple{Vector{Int}, Vector{SVector{2, Float64}}}`: A tuple containing two new vectors:
     1.  The sorted `voronoi_vertex_indices` for the particle's cell, ordered counter-clockwise.
     2.  The correspondingly sorted `voronoi_vertex_positions_per_particle`.
-
-# Notes
-- The arguments `Lx` and `Ly` (box sizes) are included in the function signature but are not currently used in the angle calculation. This implies the sorting does not explicitly handle periodic boundary conditions for angle calculation, which might be relevant if vertices cross periodic boundaries in a way that simple `atan` would misorder. However, for typical Voronoi cells generated from Delaunay triangulations (especially with periodic images handled by `update_positions_with_pbcs!`), the vertices should generally be within a local region where direct angle calculation is sufficient.
 """
-function sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertex_positions_per_particle, voronoi_vertices, voronoi_center, Lx, Ly)
+function sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertex_positions_per_particle, voronoi_vertices, voronoi_center)
     # sort the voronoi vertex indices counterclockwise
     # using the angle between the voronoi center and the voronoi vertices
     angles = zeros(Float64, length(voronoi_vertex_indices))
@@ -312,34 +287,6 @@ function sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertex_p
     return voronoi_vertex_indices[sorted_indices], voronoi_vertex_positions_per_particle[sorted_indices]
 end
 
-"""
-    outer(a::SVector{2, T}, b::SVector{2, T}) where T
-
-Computes a form of 2D vector outer product or cross product related quantity.
-Given two 2D vectors `a = [a1, a2]` and `b = [b1, b2]`, the scalar component
-of the 2D cross product (often referred to as the "perp dot product" or
-z-component of the 3D cross product if vectors are embedded in the xy-plane)
-is `a1*b2 - a2*b1`.
-
-This function returns a 2-component `SVector{2, T}` where:
-- The first component is `a[1]*b[2] - a[2]*b[1]`.
-- The second component is `a[2]*b[1] - a[1]*b[2]`, which is the negative of the first component.
-
-The specific reason for returning this two-component vector with one being the
-negative of the other, rather than just the scalar value, is not immediately obvious
-from the function itself and might relate to specific downstream calculations or conventions
-within the broader simulation code.
-
-# Arguments
-- `a::SVector{2, T}`: The first 2D input vector. `T` is its element type.
-- `b::SVector{2, T}`: The second 2D input vector. `T` is its element type.
-
-# Returns
-- `SVector{2, T}`: A 2D static vector where the first component is `a[1]*b[2] - a[2]*b[1]` and the second component is `a[2]*b[1] - a[1]*b[2]`.
-"""
-function outer(a::SVector{2, T}, b::SVector{2, T}) where T
-    return SVector{2, T}(a[1]*b[2] - a[2]*b[1], a[2]*b[1] - a[1]*b[2])
-end
 
 """
     norm2(v::SVector{2, T}) where T
@@ -427,30 +374,4 @@ moved more than a certain threshold distance since the last tessellation.
 """
 function verify_tesselation(parameters, arrays, output)
     return false
-end
-
-"""
-    update_delauney_vertices!(parameters, arrays, output)
-
-Intended to update the Delaunay vertices (which correspond to Voronoi vertices)
-incrementally, without performing a full re-tessellation. This could be useful
-if only a few particles have moved slightly, and the overall topology of the
-Delaunay triangulation is expected to remain largely unchanged.
-
-**Note:** The current implementation is a placeholder and is not functional.
-It immediately calls `error()`, indicating that this feature is not yet implemented.
-A functional version would likely involve algorithms for local updates to
-Delaunay triangulations.
-
-# Arguments
-- `parameters::ParameterStruct`: The main simulation parameter struct. (Currently unused as the function is a placeholder).
-- `arrays::ArrayStruct`: The struct holding simulation arrays, including `arrays.neighborlist` which would be modified if this function were implemented. (Currently unused).
-- `output::Output`: The simulation output struct. (Currently unused).
-
-# Throws
-- `Error`: This function, in its current state, always throws an error, indicating it is not implemented.
-"""
-function update_delauney_vertices!(parameters, arrays, output)
-    error()
-    return
 end

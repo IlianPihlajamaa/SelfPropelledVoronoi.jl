@@ -1,13 +1,6 @@
+
 """
-This module provides various helper functions for the SelfPropelledVoronoi simulation.
-These include functions for:
-- Applying periodic boundary conditions to particle positions.
-- Calculating distances between particles, considering periodic boundaries.
-- Updating the perimeters and areas of Voronoi cells.
-- Computing the total potential energy of the system based on cell areas and perimeters.
-"""
-"""
-    apply_periodic_boundary_conditions(position, box_sizes)
+apply_periodic_boundary_conditions(position, box_sizes)
 
 Applies periodic boundary conditions to a given position, ensuring it wraps around the simulation box.
 For a position coordinate `x` and a box dimension `L`, the new coordinate `x'` is `x - floor(x/L) * L`.
@@ -18,10 +11,10 @@ This maps `x` to the interval `[0, L)`. The same logic applies to all dimensions
 - `box_sizes`: The dimensions of the simulation box, typically an `SVector` or `AbstractVector` (e.g., `[Lx, Ly]`).
 
 # Returns
-- `new_position`: The position after applying periodic boundary conditions, of the same type as `position`. It will be wrapped to be within the box defined by `[0, Lx)` and `[0, Ly)`.
+- `new_position`: The position after applying periodic boundary conditions, of the same type as `position`.
 """
 function apply_periodic_boundary_conditions(position, box_sizes)
-    new_position = position - floor.(position ./ box_sizes) .* box_sizes
+    new_position = position .- floor.(position ./ box_sizes) .* box_sizes
     return new_position
 end
 
@@ -57,8 +50,6 @@ connecting its Voronoi vertices in sequence. The results are stored in `arrays.p
 # Arguments
 - `parameters::ParameterStruct`: The main simulation parameter struct. Used here to get `N`, the number of particles.
 - `arrays::ArrayStruct`: The struct holding simulation arrays. 
-    - `arrays.neighborlist.voronoi_vertex_positions_per_particle`: A vector of vectors, where each inner vector contains the `SVector{2, Float64}` positions of the Voronoi vertices for a given particle's cell, ordered sequentially.
-    - `arrays.perimeters`: A vector where the computed perimeter for each cell will be stored. This array is modified in-place.
 - `output::Output`: The simulation output struct. Not directly used in this function but included for consistency in function signatures across the module.
 
 # Notes
@@ -96,8 +87,6 @@ based on the coordinates of its Voronoi vertices. The results are stored in `arr
 # Arguments
 - `parameters::ParameterStruct`: The main simulation parameter struct. Used here to get `N`, the number of particles.
 - `arrays::ArrayStruct`: The struct holding simulation arrays.
-    - `arrays.neighborlist.voronoi_vertex_positions_per_particle`: A vector of vectors, where each inner vector contains the `SVector{2, Float64}` positions of the Voronoi vertices for a given particle's cell, ordered sequentially (counterclockwise or clockwise).
-    - `arrays.areas`: A vector where the computed area for each cell will be stored. This array is modified in-place.
 - `output::Output`: The simulation output struct. Not directly used in this function but included for consistency in function signatures across the module.
 
 # Notes
@@ -134,12 +123,7 @@ This function first calls `update_areas!` and `update_perimeters!` to ensure tha
 the current areas and perimeters in `arrays` are up-to-date before calculating the energy.
 
 # Arguments
-- `parameters::ParameterStruct`: The main simulation parameter struct. It provides:
-    - `parameters.N`: The number of particles.
-    - `parameters.particles.target_areas`: Vector of target areas for each cell.
-    - `parameters.particles.target_perimeters`: Vector of target perimeters for each cell.
-    - `parameters.particles.K_A`: Vector of spring constants for area deviations.
-    - `parameters.particles.K_P`: Vector of spring constants for perimeter deviations.
+- `parameters::ParameterStruct`: The main simulation parameter struct. 
 - `arrays::ArrayStruct`: The struct holding simulation arrays. It's passed to `update_areas!` and `update_perimeters!`, which use `arrays.neighborlist.voronoi_vertex_positions_per_particle` and update `arrays.areas` and `arrays.perimeters`.
 - `output::Output`: The simulation output struct. Passed to `update_areas!` and `update_perimeters!`.
 
