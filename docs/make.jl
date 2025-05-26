@@ -7,9 +7,9 @@ makedocs(
     modules = [SelfPropelledVoronoi],
     pages = [
         "Home" => "index.md",
-        "API Reference" => "api.md",
         "Overview" => "overview.md",
         "Examples" => "examples.md",
+        "API Reference" => "api.md",
     ],
 )
 
