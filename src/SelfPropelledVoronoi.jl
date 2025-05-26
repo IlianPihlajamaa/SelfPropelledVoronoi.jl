@@ -20,6 +20,8 @@ end
 
 export SimulationBox, ParameterStruct, VoronoiCells, ArrayStruct, Output, DumpInfo, VoronoiNeighborList
 export run_simulation!
+export compute_energy
+export compute_pair_distance_vector
 
 
 end

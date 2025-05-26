@@ -22,3 +22,5 @@ end
     end
 
 end
+
+include("test_forces.jl")

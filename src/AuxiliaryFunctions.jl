@@ -112,6 +112,7 @@ function update_areas!(parameters, arrays, output)
     end
 end
 
+
 """
     compute_energy(parameters, arrays, output)
 
@@ -131,26 +132,18 @@ the current areas and perimeters in `arrays` are up-to-date before calculating t
 - `potential_energy::Float64`: The total calculated potential energy of the system. This is the sum of energy contributions from each cell, where each cell's energy is `K_A * (area - target_area)^2 + K_P * (perimeter - target_perimeter)^2`.
 """
 function compute_energy(parameters, arrays, output)
-    # compute the potential energy of the system
-
+    N = parameters.N
+    areas = arrays.areas
     update_areas!(parameters, arrays, output)
     update_perimeters!(parameters, arrays, output)
-
-    potential_energy = 0.0
-
+    perimeters = arrays.perimeters
     target_perimeters = parameters.particles.target_perimeters
     target_areas = parameters.particles.target_areas
     K_P = parameters.particles.K_P
     K_A = parameters.particles.K_A
-
-    for particle in 1:parameters.N
-        area = arrays.areas[particle]
-        perimeter = arrays.perimeters[particle]
-        # compute the potential energy of the voronoi cell
-        potential_energy += K_A[particle] * (area - target_areas[particle])^2
-        potential_energy += K_P[particle] * (perimeter - target_perimeters[particle])^2
+    E = 0.0
+    for i in 1:N
+        E += K_A[i]*(areas[i] - target_areas[i])^2 + K_P[i]*(perimeters[i] - target_perimeters[i])^2
     end
-    return potential_energy
+    return E
 end
-
-
