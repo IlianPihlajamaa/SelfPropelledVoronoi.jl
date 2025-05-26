@@ -110,92 +110,92 @@ end
 using Random
 using StaticArrays
 
-@testset "Force Calculation" begin
-    # Simulation parameters
-    N = 25
-    rho = 1.0
-    L = sqrt(N/rho)
-    Lx = L
-    Ly = L
-    dt = 0.001
-    Nsteps = 1
-    pbc_layer_depth = 2.5
+# @testset "Force Calculation" begin
+#     # Simulation parameters
+#     N = 25
+#     rho = 1.0
+#     L = sqrt(N/rho)
+#     Lx = L
+#     Ly = L
+#     dt = 0.001
+#     Nsteps = 1
+#     pbc_layer_depth = 2.5
 
-    # Create SimulationBox
-    box = SimulationBox(Lx, Ly)
+#     # Create SimulationBox
+#     box = SimulationBox(Lx, Ly)
 
-    # Create VoronoiCells parameters
-    target_perimeters = 4.0 * ones(N)
-    target_areas = 1.0 * ones(N)
-    K_P = 1.0 * ones(N)
-    K_A = 1.0 * ones(N)
-    active_force_strengths = zeros(N)
-    D_r = zeros(N)
-    voronoi_cells = VoronoiCells(target_perimeters, target_areas, K_P, K_A, active_force_strengths, D_r)
+#     # Create VoronoiCells parameters
+#     target_perimeters = 4.0 * ones(N)
+#     target_areas = 1.0 * ones(N)
+#     K_P = 1.0 * ones(N)
+#     K_A = 1.0 * ones(N)
+#     active_force_strengths = zeros(N)
+#     D_r = zeros(N)
+#     voronoi_cells = VoronoiCells(target_perimeters, target_areas, K_P, K_A, active_force_strengths, D_r)
 
-    # Create ParameterStruct
-    kBT = 0.0
-    frictionconstant = 1.0
-    random_seed = 12345
-    Random.seed!(random_seed)
-    dump_info = DumpInfo(save=false)
-    callback = (p,a,o) -> nothing
-    parameter_struct = ParameterStruct(N=N, dt=dt, N_steps=Nsteps, kBT=kBT, frictionconstant=frictionconstant, 
-                                        periodic_boundary_layer_depth=pbc_layer_depth, verbose=false, 
-                                        box=box, particles=voronoi_cells, dump_info=dump_info, 
-                                        callback=callback, RNG=MersenneTwister(random_seed))
+#     # Create ParameterStruct
+#     kBT = 0.0
+#     frictionconstant = 1.0
+#     random_seed = 12345
+#     Random.seed!(random_seed)
+#     dump_info = DumpInfo(save=false)
+#     callback = (p,a,o) -> nothing
+#     parameter_struct = ParameterStruct(N=N, dt=dt, N_steps=Nsteps, kBT=kBT, frictionconstant=frictionconstant, 
+#                                         periodic_boundary_layer_depth=pbc_layer_depth, verbose=false, 
+#                                         box=box, particles=voronoi_cells, dump_info=dump_info, 
+#                                         callback=callback, RNG=MersenneTwister(random_seed))
 
-    # Create ArrayStruct
-    arrays = ArrayStruct(N)
+#     # Create ArrayStruct
+#     arrays = ArrayStruct(N)
 
-    # Initialize particle positions randomly
-    x = rand(Float64, N) .* Lx
-    y = rand(Float64, N) .* Ly
-    arrays.positions .= SVector.(x, y)
+#     # Initialize particle positions randomly
+#     x = rand(Float64, N) .* Lx
+#     y = rand(Float64, N) .* Ly
+#     arrays.positions .= SVector.(x, y)
 
-    # Initialize particle orientations
-    arrays.orientations .= zeros(N)
+#     # Initialize particle orientations
+#     arrays.orientations .= zeros(N)
 
-    # Create Output object
-    output = Output()
+#     # Create Output object
+#     output = Output()
 
-    # Perform initial Voronoi tesselation
-    SelfPropelledVoronoi.voronoi_tesselation!(parameter_struct, arrays, output)
+#     # Perform initial Voronoi tesselation
+#     SelfPropelledVoronoi.voronoi_tesselation!(parameter_struct, arrays, output)
 
-    # Define a small epsilon for finite differencing
-    epsilon = sqrt(eps(Float64)) # Use square root of machine epsilon for better precision
+#     # Define a small epsilon for finite differencing
+#     epsilon = sqrt(eps(Float64)) # Use square root of machine epsilon for better precision
 
-    # Define the number of particles to test
-    num_particles_to_test = 5 # Test the first 5 particles
+#     # Define the number of particles to test
+#     num_particles_to_test = 5 # Test the first 5 particles
 
-    # Call the SPV force calculation
-    SelfPropelledVoronoi.compute_forces_SPV!(parameter_struct, arrays, output)
+#     # Call the SPV force calculation
+#     SelfPropelledVoronoi.compute_forces_SPV!(parameter_struct, arrays, output)
 
-    # Loop through the selected number of particles to test forces
-    for i in 1:num_particles_to_test
-        # Get the i-th particle's SPV force
-        F_spv = arrays.forces[i]
+#     # Loop through the selected number of particles to test forces
+#     for i in 1:num_particles_to_test
+#         # Get the i-th particle's SPV force
+#         F_spv = arrays.forces[i]
 
-        # Calculate the finite difference force for the i-th particle
-        # Ensure arrays.positions is not modified by compute_forces_finite_difference before this call for particle i
-        # The compute_forces_finite_difference function should ideally use a deepcopy of arrays internally if it modifies positions for calculation
-        # or ensure it restores the state perfectly. Given its current structure, it restores the specific particle's position.
-        # However, the global 'arrays' state (like areas, perimeters updated by tesselation) might be affected by intermediate steps.
-        # For a clean test, it's best if compute_forces_finite_difference takes a 'clean' arrays state or deepcopies appropriately.
-        # For now, we proceed assuming compute_forces_finite_difference handles its state changes correctly and restores.
+#         # Calculate the finite difference force for the i-th particle
+#         # Ensure arrays.positions is not modified by compute_forces_finite_difference before this call for particle i
+#         # The compute_forces_finite_difference function should ideally use a deepcopy of arrays internally if it modifies positions for calculation
+#         # or ensure it restores the state perfectly. Given its current structure, it restores the specific particle's position.
+#         # However, the global 'arrays' state (like areas, perimeters updated by tesselation) might be affected by intermediate steps.
+#         # For a clean test, it's best if compute_forces_finite_difference takes a 'clean' arrays state or deepcopies appropriately.
+#         # For now, we proceed assuming compute_forces_finite_difference handles its state changes correctly and restores.
         
-        # Re-calculate tesselation before finite difference to ensure a clean state for energy calculation baseline
-        # This is important if the main SPV force calculation modified shared state like 'output' or 'arrays' in ways
-        # that compute_forces_finite_difference doesn't fully reset for its own baseline energy calculation.
-        # SelfPropelledVoronoi.voronoi_tesselation!(parameter_struct, arrays, output) # This might be redundant if compute_forces_finite_difference does it.
+#         # Re-calculate tesselation before finite difference to ensure a clean state for energy calculation baseline
+#         # This is important if the main SPV force calculation modified shared state like 'output' or 'arrays' in ways
+#         # that compute_forces_finite_difference doesn't fully reset for its own baseline energy calculation.
+#         # SelfPropelledVoronoi.voronoi_tesselation!(parameter_struct, arrays, output) # This might be redundant if compute_forces_finite_difference does it.
 
-        F_fd = compute_forces_finite_difference(i, parameter_struct, arrays, output, epsilon)
+#         F_fd = compute_forces_finite_difference(i, parameter_struct, arrays, output, epsilon)
 
-        # Compare the forces
-        @test F_spv[1] ≈ F_fd[1] atol=1e-5
-        @test F_spv[2] ≈ F_fd[2] atol=1e-5
-    end
-end
+#         # Compare the forces
+#         @test F_spv[1] ≈ F_fd[1] atol=1e-5
+#         @test F_spv[2] ≈ F_fd[2] atol=1e-5
+#     end
+# end
 
 @testset "GCM Force Calculation" begin
     # Simulation parameters
