@@ -1,5 +1,4 @@
 using SelfPropelledVoronoi
-using SelfPropelledVoronoi.Tesselation
 using Test
 using StaticArrays
 
