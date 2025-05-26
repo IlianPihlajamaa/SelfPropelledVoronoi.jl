@@ -1,8 +1,5 @@
 using HDF5
 
-# ParameterStruct, ArrayStruct, Output are expected to be defined elsewhere
-# and available in the scope where this function is called.
-# DumpInfo is part of ParameterStruct.
 
 """
     save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct, output::Output)
@@ -31,8 +28,7 @@ will be saved under the `/parameters` group. These include:
 
 For both new and existing files, the simulation data for the current step (obtained from
 `output.steps_done`) is saved in a new group named after the step number (e.g., `/0`,
-`/1000`, etc.). If a group for the current step already exists in an existing file, it will
-be overwritten with a warning.
+`/1000`, etc.).
 
 Each step group (`/<step_number>/`) contains the following datasets, depending on the
 flags in `parameters.dump_info`:
@@ -57,11 +53,9 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
     current_step_str = string(output.steps_done)
     file_exists = isfile(filename)
 
-    @info "Attempting to save state to $filename. Step: $current_step_str. File exists: $file_exists."
 
     if endswith(filename, ".h5") || endswith(filename, ".hdf5")
         if !file_exists
-            @info "File $filename does not exist. Creating and writing parameters and initial step."
             HDF5.h5open(filename, "w") do file_handle
                 # Save Parameters
                 params_g = HDF5.create_group(file_handle, "parameters")
@@ -71,7 +65,8 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
                 params_g["kBT"] = parameters.kBT
                 params_g["frictionconstant"] = parameters.frictionconstant
                 # Assuming parameters.box.box_sizes is an SVector or similar directly writable by HDF5.jl
-                params_g["box_sizes"] = parameters.box.box_sizes
+
+                params_g["box_sizes"] = collect(parameters.box.box_sizes)
 
                 # Save particle-specific parameters from VoronoiCells
                 # Assuming parameters.particles is of type VoronoiCells
@@ -88,12 +83,14 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
                 if dump_info.save_r
                     # Assuming arrays.positions and arrays.orientations are suitable for HDF5.jl
                     # (e.g., Vector{SVector{2, Float64}} for positions, Vector{Float64} for orientations)
-                    step_g["positions"] = arrays.positions
+
+                    step_g["positions"] = stack(arrays.positions)
                     step_g["orientations"] = arrays.orientations
                 end
                 if dump_info.save_F
                     # Assuming arrays.forces is suitable (e.g., Vector{SVector{2, Float64}})
-                    step_g["forces"] = arrays.forces
+
+                    step_g["forces"] = stack(arrays.forces)
                 end
                 if dump_info.save_Epot
                     step_g["potential_energy"] = output.potential_energy
@@ -101,23 +98,22 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
                 step_g["areas"] = arrays.areas
                 step_g["perimeters"] = arrays.perimeters
             end
-            @info "Finished writing to new file $filename."
+
         else
-            @info "File $filename exists. Appending data for step $current_step_str."
             HDF5.h5open(filename, "r+") do file_handle # Open in read-write mode
                 # Check if group for current step already exists
-                if HDF5.exists(file_handle, current_step_str)
-                    @warn "Step group $current_step_str already exists in $filename. Overwriting."
-                    HDF5.delete_object(file_handle, current_step_str) # Or HDF5.o_delete for older HDF5.jl versions
+                if current_step_str in keys(file_handle)
+                    error("Group for step $current_step_str already exists in $filename. Cannot append.")
                 end
                 
                 step_g = HDF5.create_group(file_handle, current_step_str)
                 if dump_info.save_r
-                    step_g["positions"] = arrays.positions
+
+                    step_g["positions"] = stack(arrays.positions)
                     step_g["orientations"] = arrays.orientations
                 end
                 if dump_info.save_F
-                    step_g["forces"] = arrays.forces
+                    step_g["forces"] = stack(arrays.forces)
                 end
                 if dump_info.save_Epot
                     step_g["potential_energy"] = output.potential_energy
@@ -125,10 +121,10 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
                 step_g["areas"] = arrays.areas
                 step_g["perimeters"] = arrays.perimeters
             end
-            @info "Finished appending step $current_step_str to $filename."
+
         end
     else
-        @warn "Unsupported file extension: $filename. Only .h5 or .hdf5 are supported. Skipping save."
+        throw(ArgumentError("Filename must end with .h5 or .hdf5. Provided: $filename"))
     end
 
     return nothing

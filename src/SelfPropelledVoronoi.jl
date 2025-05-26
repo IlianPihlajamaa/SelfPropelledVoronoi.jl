@@ -1,6 +1,6 @@
 
 module SelfPropelledVoronoi
-import LoopVectorization, Quickhull, Random, HDF5
+import  Quickhull, Random, HDF5
 using SmallCollections: MutableSmallVector
 using StaticArrays: SVector
 
@@ -19,8 +19,11 @@ for file in [
     include(file) 
 end
 
-export SimulationBox, ParameterStruct, VoronoiCells, ArrayStruct, Output, DumpInfo, VoronoiNeighborList, TrajectoryData
-export run_simulation!, load_simulation_state, load_trajectory
+
+export SimulationBox, ParameterStruct, VoronoiCells, ArrayStruct, Output, DumpInfo, VoronoiNeighborList
+export run_simulation!
+export compute_energy
+export compute_pair_distance_vector
 
 
 end

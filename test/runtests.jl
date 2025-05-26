@@ -5,7 +5,37 @@ using StaticArrays
 import Random
 
 # Helper function to set up mock objects for testing
-function setup_test_objects(N_val=2, Lx_val=10.0, Ly_val=10.0;
+
+
+
+@testset "apply_periodic_boundary_conditions" begin
+    @testset "2D" begin
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(0.5, 0.5), SVector(1.0, 1.0)) ≈ SVector(0.5, 0.5)
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.5, -0.5), SVector(1.0, 1.0)) ≈ SVector(0.5, 0.5)
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.0, 0.0), SVector(1.0, 1.0)) ≈ SVector(0.0, 0.0)
+    end
+end
+
+@testset "compute_pair_distance_vector" begin
+
+    @testset "2D" begin
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.2, 0.2), SVector(0.4, 0.4), SVector(1.0, 1.0)) ≈ SVector(0.2, 0.2)
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.2), SVector(0.2, 0.4), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.2)
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.8), SVector(0.2, 0.2), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.4)
+    end
+end
+
+
+
+include("test_forces.jl")
+include("test_tesselation.jl")
+include("test_loading_and_saving.jl")
+              
+              
+              
+              
+              
+           function setup_test_objects(N_val=2, Lx_val=10.0, Ly_val=10.0;
                             filename_val="default_test.h5", steps_val=0,
                             save_r_val=true, save_F_val=true, save_Epot_val=true)
     
@@ -47,13 +77,13 @@ function setup_test_objects(N_val=2, Lx_val=10.0, Ly_val=10.0;
     output.potential_energy = rand(rng, Float64) * 100.0
 
     return params, arrays, output
-end
-
-@testset "SelfPropelledVoronoi.jl" begin
-
-    @test SelfPropelledVoronoi.test_force(1) == 2
-
-    @testset "Dump Tests" begin
+end   
+              
+              
+              
+              
+              
+   @testset "Dump Tests" begin
         test_filename1 = "test_dump_new.h5"
         try
             rm(test_filename1, force=true) # Cleanup before test
@@ -412,6 +442,4 @@ end
                     rm(test_load_filename, force=true)
                 end
             end
-        end
-    end
-end
+        end           
