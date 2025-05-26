@@ -2,7 +2,6 @@ using SelfPropelledVoronoi
 using SelfPropelledVoronoi.Tesselation
 using Test
 using StaticArrays
-# using Combinatorics # No longer needed for verify_tessellation
 
 # Helper to initialize basic structures for tests
 function setup_test_environment(particle_positions::Vector{SVector{2, Float64}}, box_size_val::Float64 = 100.0)
@@ -20,6 +19,28 @@ function setup_test_environment(particle_positions::Vector{SVector{2, Float64}},
     output = Output() 
 
     return parameters, arrays, output
+end
+
+using StaticArrays: SVector
+
+
+@testset "apply_periodic_boundary_conditions" begin
+    @testset "2D" begin
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(0.5, 0.5), SVector(1.0, 1.0)) ≈ SVector(0.5, 0.5)
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.5, -0.5), SVector(1.0, 1.0)) ≈ SVector(0.5, 0.5)
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.0, 0.0), SVector(1.0, 1.0)) ≈ SVector(0.0, 0.0)
+    end
+
+
+end
+
+@testset "compute_pair_distance_vector" begin
+
+    @testset "2D" begin
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.2, 0.2), SVector(0.4, 0.4), SVector(1.0, 1.0)) ≈ SVector(0.2, 0.2)
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.2), SVector(0.2, 0.4), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.2)
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.8), SVector(0.2, 0.2), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.4)
+    end
 end
 
 
@@ -120,31 +141,4 @@ end
     end
 end
 
-# Notes on setup_test_environment assumptions:
-# 1. `Parameters(N=N, box=_box)`: Uses keyword arguments. If it's positional, it would be `Parameters(N, _box)`.
-# 2. `Arrays(N=N)`: Assumes a constructor that takes N and initializes internal fields.
-#    Specifically, `arrays.positions` should be ready to be overwritten,
-#    `arrays.old_positions` should be initialized (e.g. empty `Vector{SVector{2,Float64}}[]`),
-#    and `arrays.neighborlist` should be an initialized `NeighborList` struct.
-#    If `Arrays()` default constructor is used, then `arrays.positions = ...`, `arrays.old_positions = ...`,
-#    `arrays.neighborlist = NeighborList()` lines would be needed inside the helper or tests.
-#    The current `setup_test_environment` tries to handle this by direct assignment after `Arrays(N=N)`.
-
-```
-The tests are structured as requested. I've made some minor adjustments to the `setup_test_environment` and specific test assertions for clarity, particularly around `old_positions` handling.
-
-A key assumption is how `Parameters` and `Arrays` are constructed and initialized. I've used keyword arguments for `Parameters(N=N, box=_box)` and `Arrays(N=N)` for robustness, as this is common in Julia. If the constructors are positional or different, those lines would need adjustment. The current code initializes `arrays.positions` and `arrays.old_positions` within the helper after construction.
-
-The "Invalid Tessellation (External Particle Moved into Circumcircle)" test has a comment acknowledging its dependency on `p5` (or its image) becoming a Delaunay neighbor to one of `p2,p3,p4` during the initial `voronoi_tesselation!` call (when `p5` is far). This is generally true for Delaunay triangulations covering the entire (possibly wrapped) space.
-
-I've also added a conditional check for the original `test_force` test case, so it doesn't error if that function isn't defined during this specific testing phase.
-
-Final check of requirements:
--   Tests for valid, invalid, and <3 neighbors: Covered.
--   Point on circumcircle: Covered implicitly by the square test and the `< R_sq - epsilon` logic.
--   `using` statements: Included.
--   Initialization of `parameters`, `arrays`: Handled by `setup_test_environment`.
--   `voronoi_tesselation!` usage: Done before `verify_tessellation`.
--   `positions_with_pbc` and `voronoi_neighbors` usage: The invalid cases rely on manipulating positions and then calling `update_positions_with_pbcs!` to ensure `verify_tessellation` uses current positions with stale neighbor lists.
-
-The solution looks ready.
+include("test_forces.jl")
