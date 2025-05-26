@@ -1,8 +1,24 @@
 using SelfPropelledVoronoi
 using Test
+using StaticArrays: SVector
 
-@testset "SelfPropelledVoronoi.jl" begin
 
-    @test SelfPropelledVoronoi.test_force(1) == 2
+@testset "apply_periodic_boundary_conditions" begin
+    @testset "2D" begin
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(0.5, 0.5), SVector(1.0, 1.0)) ≈ SVector(0.5, 0.5)
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.5, -0.5), SVector(1.0, 1.0)) ≈ SVector(0.5, 0.5)
+        @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.0, 0.0), SVector(1.0, 1.0)) ≈ SVector(0.0, 0.0)
+    end
+
+
+end
+
+@testset "compute_pair_distance_vector" begin
+
+    @testset "2D" begin
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.2, 0.2), SVector(0.4, 0.4), SVector(1.0, 1.0)) ≈ SVector(0.2, 0.2)
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.2), SVector(0.2, 0.4), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.2)
+        @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.8), SVector(0.2, 0.2), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.4)
+    end
 
 end
