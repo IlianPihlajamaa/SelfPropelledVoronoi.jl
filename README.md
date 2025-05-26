@@ -8,7 +8,7 @@
 
 *   **Area and Perimeter Elasticity:** Particles (modeled as Voronoi cells) have target areas and perimeters. Deviations from these targets result in elastic energy penalties, influencing particle motion.
 *   **Active Particle Motion:** Particles are self-propelled, meaning they have an intrinsic force that drives them in a direction determined by their orientation. This orientation can change due to rotational diffusion.
-*   **Periodic Boundary Conditions:** The simulation domain is typically a rectangular box with periodic boundary conditions, allowing for simulations of bulk systems.
+*   **Periodic Boundary Conditions:** The simulation domain is a rectangular box with periodic boundary conditions, allowing for simulations of bulk systems.
 
 See Bi, Dapeng, et al. "Motility-driven glass and jamming transitions in biological tissues." Physical Review X 6.2 (2016): 021011.
 
