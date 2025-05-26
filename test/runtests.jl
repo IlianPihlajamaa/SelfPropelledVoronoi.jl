@@ -1,6 +1,9 @@
 using SelfPropelledVoronoi
 using Test
-using StaticArrays: SVector
+using StaticArrays
+
+
+
 
 
 @testset "apply_periodic_boundary_conditions" begin
@@ -20,7 +23,9 @@ end
         @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.2), SVector(0.2, 0.4), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.2)
         @test SelfPropelledVoronoi.compute_pair_distance_vector(SVector(0.8, 0.8), SVector(0.2, 0.2), SVector(1.0, 1.0)) ≈ SVector(0.4, 0.4)
     end
-
 end
 
+
+
 include("test_forces.jl")
+include("test_tesselation.jl")

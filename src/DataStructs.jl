@@ -63,6 +63,7 @@ mutable struct VoronoiNeighborList
     cell_centers_that_share_a_vertex::Vector{Tuple{Int, Int, Int}}  # List of cell centers that share a vertex
     positions_with_pbc::Vector{SVector{2, Float64}}               # List of positions with periodic boundary conditions
     position_indices::Vector{Int64}                               # List of indices for the positions with periodic boundary conditions
+    delaunay_facet_triplets::Vector{NTuple{3, Int}}               # Stores original particle indices forming Delaunay facets
     VoronoiNeighborList(N) = new(
         [Vector{Int64}() for _ in 1:N],
         [Vector{Int64}() for _ in 1:N],
@@ -70,7 +71,8 @@ mutable struct VoronoiNeighborList
         [zero(SVector{2, Float64}) for _ in 1:N],
         Tuple{Int, Int, Int}[],
         SVector{2, Float64}[],
-        Int64[]
+        Int64[],
+        NTuple{3, Int}[] # Initialize delaunay_facet_triplets
     )
 end
 

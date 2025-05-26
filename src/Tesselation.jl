@@ -1,3 +1,4 @@
+# using Combinatorics # No longer needed
 
 """
     replace_or_push!(array, value, index)
@@ -172,6 +173,9 @@ function voronoi_tesselation!(parameters, arrays, output)
     Lx, Ly = parameters.box.box_sizes
     update_positions_with_pbcs!(parameters, arrays, output)
 
+    # Initialize or clear delaunay_facet_triplets
+    empty!(arrays.neighborlist.delaunay_facet_triplets)
+
     # get the delauney triangulation
     positions_with_pbc = arrays.neighborlist.positions_with_pbc
     N_pbc = length(positions_with_pbc)
@@ -186,10 +190,16 @@ function voronoi_tesselation!(parameters, arrays, output)
     delauney_facets = Quickhull.facets(tri)
 
     for facet in delauney_facets
-        i = facet[1]
-        j = facet[2]
-        k = facet[3]
+        i = facet[1] # This is idx1_pbc
+        j = facet[2] # This is idx2_pbc
+        k = facet[3] # This is idx3_pbc
 
+        
+        sorted_triplet = (i,j,k)
+        
+        if !(sorted_triplet in arrays.neighborlist.delaunay_facet_triplets)
+            push!(arrays.neighborlist.delaunay_facet_triplets, sorted_triplet)
+        end
     
         # add these to the voronoi neighborlist for every particle pair, checking if it is already filled
         if !(j in voronoi_neighbors[i])
@@ -246,6 +256,7 @@ function voronoi_tesselation!(parameters, arrays, output)
     arrays.neighborlist.voronoi_vertex_indices = voronoi_vertex_indices
     arrays.neighborlist.voronoi_vertex_positions_per_particle = voronoi_vertex_positions_per_particle
     arrays.neighborlist.cell_centers_that_share_a_vertex = cell_centers_that_share_a_vertex
+    # The field arrays.neighborlist.delaunay_facet_triplets is already updated in the loop.
     return 
 end
 
@@ -353,25 +364,58 @@ end
 """
     verify_tesselation(parameters, arrays, output)
 
-Checks if the current Voronoi tessellation stored in `arrays.neighborlist` is still
-considered valid. This function is intended to be used to determine if a full
-re-tessellation is necessary, potentially saving computational cost if the
-tessellation can be assumed to be stable under small particle displacements.
-
-**Note:** The current implementation is a placeholder and always returns `false`.
-This means that, with the current logic, the system will always perform a full
-re-tessellation in every step where this check is made (e.g., in `compute_forces_SPV!`).
-A more sophisticated implementation might check, for example, if any particle has
-moved more than a certain threshold distance since the last tessellation.
-
+Verifies the validity of the Voronoi tessellation by checking if all particles
+are correctly positioned with respect to the Delaunay facets of the tessellation.
+This function checks that for each Delaunay facet (triangle) defined by a triplet of particles,
+the circumcircle of the triangle does not contain any other particle that is not one of the triangle's vertices.
 # Arguments
-- `parameters::ParameterStruct`: The main simulation parameter struct. (Currently unused in this placeholder version).
-- `arrays::ArrayStruct`: The struct holding simulation arrays, including `arrays.neighborlist` which contains the current tessellation data. (Currently unused in this placeholder version).
-- `output::Output`: The simulation output struct. (Currently unused in this placeholder version).
-
+- `parameters::ParameterStruct`: The main simulation parameter struct, providing the number of particles `N`.
+- `arrays::ArrayStruct`: The struct holding simulation arrays, including positions and neighbor lists.
+- `output::Output`: The simulation output struct. Not directly used in this function but included for consistency in function signatures.
 # Returns
-- `::Bool`: Currently, this function always returns `false`, indicating that the tessellation is always considered invalid and needs recomputation.
+- `Bool`: Returns `true` if the tessellation is valid (no violations found), or `false` if any particle is found within the circumcircle of a Delaunay facet that is not one of its vertices.
+# Notes
+- The function assumes that the Voronoi tessellation has already been computed and that the necessary fields in `arrays.neighborlist` are populated, including `delaunay_facet_triplets`, `positions_with_pbc`, and `voronoi_neighbors`.
+- The field arrays.neighborlist.positions_with_pbc is updated to include periodic boundary conditions.
 """
-function verify_tesselation(parameters, arrays, output)
-    return false
+function verify_tessellation(parameters, arrays, output)
+    epsilon = 1e-9
+    update_positions_with_pbcs!(parameters, arrays, output)
+
+    # Iterate through each pre-computed Delaunay facet triplet
+    for triplet_indices in arrays.neighborlist.delaunay_facet_triplets
+        p1_idx, p2_idx, p3_idx = triplet_indices
+
+        # Fetch positions directly from arrays.positions using original indices
+        pos1 = arrays.neighborlist.positions_with_pbc[p1_idx]
+        pos2 = arrays.neighborlist.positions_with_pbc[p2_idx]
+        pos3 = arrays.neighborlist.positions_with_pbc[p3_idx]
+
+        # Calculate circumcenter and circumradius squared
+        C = circumcenter(pos1, pos2, pos3)
+        R_sq = norm2(pos1 - C) # Radius squared from first point of triplet to center
+
+        for particle_idx_in_triplet in triplet_indices
+            # only consider particles that are within the original particle count
+            # This ensures we only check particles that are part of the original set
+            if particle_idx_in_triplet <= parameters.N 
+                for neighbor_pbc_idx in arrays.neighborlist.voronoi_neighbors[particle_idx_in_triplet]
+                    if neighbor_pbc_idx in triplet_indices
+                        continue # Skip if the neighbor is one of the triplet vertices
+                    end
+
+                    # Fetch the position of the test particle
+                    p_test = arrays.neighborlist.positions_with_pbc[neighbor_pbc_idx]
+                    # Calculate squared distance to circumcenter
+                    d_sq = norm2(p_test - C)
+                    # Check for Delaunay violation
+                    if d_sq < R_sq - epsilon
+                        # A violation is found, return false
+                        return false
+                    end
+                end
+            end
+        end
+    end
+    return true
 end
