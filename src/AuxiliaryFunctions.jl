@@ -1,17 +1,61 @@
+
+"""
+apply_periodic_boundary_conditions(position, box_sizes)
+
+Applies periodic boundary conditions to a given position, ensuring it wraps around the simulation box.
+For a position coordinate `x` and a box dimension `L`, the new coordinate `x'` is `x - floor(x/L) * L`.
+This maps `x` to the interval `[0, L)`. The same logic applies to all dimensions.
+
+# Arguments
+- `position`: The original position, typically an `SVector` or any `AbstractVector` representing coordinates (e.g., `[x, y]`).
+- `box_sizes`: The dimensions of the simulation box, typically an `SVector` or `AbstractVector` (e.g., `[Lx, Ly]`).
+
+# Returns
+- `new_position`: The position after applying periodic boundary conditions, of the same type as `position`.
+"""
 function apply_periodic_boundary_conditions(position, box_sizes)
-    new_position = position - floor.(position ./ box_sizes) .* box_sizes
+    new_position = position .- floor.(position ./ box_sizes) .* box_sizes
     return new_position
 end
 
+"""
+    compute_pair_distance_vector(p1, p2, box_sizes)
 
+Computes the shortest vector (displacement) from particle `p1` to particle `p2`
+in a system with periodic boundary conditions (PBC). This is often referred to as
+the minimum image convention. For a coordinate difference `dx` and box dimension `L`,
+the PBC-aware difference `dx'` is `dx - round(dx/L) * L`.
+
+# Arguments
+- `p1`: Position of the first particle (e.g., an `SVector` or `AbstractVector` like `[x1, y1]`).
+- `p2`: Position of the second particle (e.g., an `SVector` or `AbstractVector` like `[x2, y2]`).
+- `box_sizes`: Dimensions of the simulation box (e.g., an `SVector` or `AbstractVector` like `[Lx, Ly]`).
+
+# Returns
+- `delta`: The displacement vector from `p1` to `p2` after applying the minimum image convention due to PBC. This will be of the same type as `p1` and `p2`.
+"""
 function compute_pair_distance_vector(p1, p2, box_sizes)
-    # Compute the pair distance between two particles with periodic boundary conditions
     delta = p2 - p1
     delta = delta - round.(delta ./ box_sizes) .* box_sizes
     return delta
 end
 
+"""
+    update_perimeters!(parameters, arrays, output)
 
+Calculates and updates the perimeters of all Voronoi cells.
+The perimeter of each cell is computed by summing the lengths of the segments
+connecting its Voronoi vertices in sequence. The results are stored in `arrays.perimeters`.
+
+# Arguments
+- `parameters::ParameterStruct`: The main simulation parameter struct. Used here to get `N`, the number of particles.
+- `arrays::ArrayStruct`: The struct holding simulation arrays. 
+- `output::Output`: The simulation output struct. Not directly used in this function but included for consistency in function signatures across the module.
+
+# Notes
+- This function assumes that the Voronoi vertex positions for each cell are already calculated and available in `arrays.neighborlist.voronoi_vertex_positions_per_particle`.
+- The `arrays.perimeters` vector is updated in-place with the new perimeter values.
+"""
 function update_perimeters!(parameters, arrays, output)
     voronoi_vertex_positions_per_particle = arrays.neighborlist.voronoi_vertex_positions_per_particle
     for particle_i in 1:parameters.N
@@ -33,6 +77,22 @@ function update_perimeters!(parameters, arrays, output)
     end
 end
 
+"""
+    update_areas!(parameters, arrays, output)
+
+Calculates and updates the areas of all Voronoi cells.
+The area of each cell is computed using the shoelace formula (also known as Gauss's area formula),
+based on the coordinates of its Voronoi vertices. The results are stored in `arrays.areas`.
+
+# Arguments
+- `parameters::ParameterStruct`: The main simulation parameter struct. Used here to get `N`, the number of particles.
+- `arrays::ArrayStruct`: The struct holding simulation arrays.
+- `output::Output`: The simulation output struct. Not directly used in this function but included for consistency in function signatures across the module.
+
+# Notes
+- This function assumes that the Voronoi vertex positions for each cell are already calculated and available in `arrays.neighborlist.voronoi_vertex_positions_per_particle`, and that these vertices are ordered sequentially.
+- The `arrays.areas` vector is updated in-place with the new area values. The shoelace formula calculates signed area, so the division by 2.0 yields the geometric area assuming a consistent vertex ordering.
+"""
 function update_areas!(parameters, arrays, output)
     voronoi_vertex_positions_per_particle = arrays.neighborlist.voronoi_vertex_positions_per_particle
     for particle_i in 1:parameters.N
@@ -52,7 +112,24 @@ function update_areas!(parameters, arrays, output)
     end
 end
 
+"""
+    compute_energy(parameters, arrays, output)
 
+Computes the total potential energy of the system. This energy is typically derived from
+the deviations of individual Voronoi cell areas and perimeters from their target values,
+penalized by corresponding spring constants.
+
+This function first calls `update_areas!` and `update_perimeters!` to ensure that
+the current areas and perimeters in `arrays` are up-to-date before calculating the energy.
+
+# Arguments
+- `parameters::ParameterStruct`: The main simulation parameter struct. 
+- `arrays::ArrayStruct`: The struct holding simulation arrays. It's passed to `update_areas!` and `update_perimeters!`, which use `arrays.neighborlist.voronoi_vertex_positions_per_particle` and update `arrays.areas` and `arrays.perimeters`.
+- `output::Output`: The simulation output struct. Passed to `update_areas!` and `update_perimeters!`.
+
+# Returns
+- `potential_energy::Float64`: The total calculated potential energy of the system. This is the sum of energy contributions from each cell, where each cell's energy is `K_A * (area - target_area)^2 + K_P * (perimeter - target_perimeter)^2`.
+"""
 function compute_energy(parameters, arrays, output)
     # compute the potential energy of the system
 
