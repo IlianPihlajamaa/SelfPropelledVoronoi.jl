@@ -180,6 +180,26 @@ mutable struct DumpInfo{A<:AbstractArray}
     )
 end
 
+mutable struct TrajectoryData
+    positions_trajectory::Vector{Vector{SVector{2, Float64}}}
+    orientations_trajectory::Vector{Vector{Float64}}
+    forces_trajectory::Vector{Vector{SVector{2, Float64}}}
+    potential_energy_trajectory::Vector{Float64}
+    areas_trajectory::Vector{Vector{Float64}}
+    perimeters_trajectory::Vector{Vector{Float64}}
+    steps_saved::Vector{Int64}
+    TrajectoryData() = new(
+        Vector{Vector{SVector{2, Float64}}}(),
+        Vector{Vector{Float64}}(),
+        Vector{Vector{SVector{2, Float64}}}(),
+        Vector{Float64}(),
+        Vector{Vector{Float64}}(),
+        Vector{Vector{Float64}}(),
+        Vector{Int64}()
+    )
+end
+
+
 """
     ParameterStruct(N, dt, N_steps, kBT, frictionconstant, periodic_boundary_layer_depth, verbose, box, particles, dump_info, callback, RNG)
 

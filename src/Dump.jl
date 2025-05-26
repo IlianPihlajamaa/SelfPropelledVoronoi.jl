@@ -1,5 +1,6 @@
 using HDF5
 
+
 """
     save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct, output::Output)
 
@@ -52,6 +53,7 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
     current_step_str = string(output.steps_done)
     file_exists = isfile(filename)
 
+
     if endswith(filename, ".h5") || endswith(filename, ".hdf5")
         if !file_exists
             HDF5.h5open(filename, "w") do file_handle
@@ -62,7 +64,9 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
                 params_g["N_steps"] = parameters.N_steps
                 params_g["kBT"] = parameters.kBT
                 params_g["frictionconstant"] = parameters.frictionconstant
+                params_g["periodic_boundary_layer_depth"] = parameters.periodic_boundary_layer_depth
                 # Assuming parameters.box.box_sizes is an SVector or similar directly writable by HDF5.jl
+
                 params_g["box_sizes"] = collect(parameters.box.box_sizes)
 
                 # Save particle-specific parameters from VoronoiCells
@@ -80,11 +84,13 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
                 if dump_info.save_r
                     # Assuming arrays.positions and arrays.orientations are suitable for HDF5.jl
                     # (e.g., Vector{SVector{2, Float64}} for positions, Vector{Float64} for orientations)
+
                     step_g["positions"] = stack(arrays.positions)
                     step_g["orientations"] = arrays.orientations
                 end
                 if dump_info.save_F
                     # Assuming arrays.forces is suitable (e.g., Vector{SVector{2, Float64}})
+
                     step_g["forces"] = stack(arrays.forces)
                 end
                 if dump_info.save_Epot
@@ -93,6 +99,7 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
                 step_g["areas"] = arrays.areas
                 step_g["perimeters"] = arrays.perimeters
             end
+
         else
             HDF5.h5open(filename, "r+") do file_handle # Open in read-write mode
                 # Check if group for current step already exists
@@ -102,6 +109,7 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
                 
                 step_g = HDF5.create_group(file_handle, current_step_str)
                 if dump_info.save_r
+
                     step_g["positions"] = stack(arrays.positions)
                     step_g["orientations"] = arrays.orientations
                 end
@@ -114,6 +122,7 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
                 step_g["areas"] = arrays.areas
                 step_g["perimeters"] = arrays.perimeters
             end
+
         end
     else
         throw(ArgumentError("Filename must end with .h5 or .hdf5. Provided: $filename"))

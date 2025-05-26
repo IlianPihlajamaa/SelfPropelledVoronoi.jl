@@ -4,6 +4,9 @@ using HDF5
 using StaticArrays
 import Random
 
+# Helper function to set up mock objects for testing
+
+
 
 @testset "apply_periodic_boundary_conditions" begin
     @testset "2D" begin
@@ -11,8 +14,6 @@ import Random
         @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.5, -0.5), SVector(1.0, 1.0)) ≈ SVector(0.5, 0.5)
         @test SelfPropelledVoronoi.apply_periodic_boundary_conditions(SVector(1.0, 0.0), SVector(1.0, 1.0)) ≈ SVector(0.0, 0.0)
     end
-
-
 end
 
 @testset "compute_pair_distance_vector" begin
@@ -29,3 +30,7 @@ end
 include("test_forces.jl")
 include("test_tesselation.jl")
 include("test_loading_and_saving.jl")
+              
+              
+              
+              
