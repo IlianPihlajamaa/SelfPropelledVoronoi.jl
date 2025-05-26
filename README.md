@@ -1,6 +1,10 @@
 # SelfPropelledVoronoi
 
 [![Build Status](https://github.com/IlianPihlajamaa/SelfPropelledVoronoi.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/IlianPihlajamaa/SelfPropelledVoronoi.jl/actions/workflows/CI.yml?query=branch%3Amaster)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://IlianPihlajamaa.github.io/SelfPropelledVoronoi.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://IlianPihlajamaa.github.io/SelfPropelledVoronoi.jl/dev)
+
+
 
 ## High-level Overview
 
