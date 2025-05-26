@@ -1,12 +1,4 @@
-using HDF5
-using Random
-using StaticArrays
 
-# Assuming structs are accessible via Main.SelfPropelledVoronoi
-# If not, this might need adjustment based on the actual module structure
-using Main.SelfPropelledVoronoi: ParameterStruct, ArrayStruct, Output, SimulationBox, VoronoiCells, DumpInfo, VoronoiNeighborList, TrajectoryData
-
-# Function definitions will go here
 
 function load_simulation_state(filename::String)
     h5open(filename, "r") do file
@@ -17,6 +9,7 @@ function load_simulation_state(filename::String)
         N_steps = read(params_group["N_steps"])
         kBT = read(params_group["kBT"])
         frictionconstant = read(params_group["frictionconstant"])
+        periodic_boundary_layer_depth = read(params_group["periodic_boundary_layer_depth"])
         
         box_sizes_vec = read(params_group["box_sizes"])
         box = SimulationBox(box_sizes_vec[1], box_sizes_vec[2])
@@ -40,10 +33,9 @@ function load_simulation_state(filename::String)
         callback = nothing
 
         parameter_struct = ParameterStruct(
-            N, dt, N_steps, kBT, frictionconstant, 
-            0.0, # periodic_boundary_layer_depth, assuming 0 or needs to be saved
-            false, # verbose, assuming false or needs to be saved
-            box, particles, dump_info, callback, rng
+            N=N, dt=dt, N_steps=N_steps, kBT=kBT, frictionconstant=frictionconstant,
+            periodic_boundary_layer_depth=periodic_boundary_layer_depth, verbose=false, box=box,
+            particles=particles, dump_info=dump_info, callback=callback, RNG=rng
         )
 
         # Identify the most recent simulation step
@@ -64,20 +56,20 @@ function load_simulation_state(filename::String)
 
         # Load data for the latest step
         positions_raw = read(step_group["positions"])
-        positions = [SVector{2, Float64}(positions_raw[i, :]) for i in 1:size(positions_raw, 1)]
+        positions = [SVector{2, Float64}(positions_raw[:, i]) for i in 1:N]
 
         orientations = Float64[]
         if "orientations" in keys(step_group)
             orientations = read(step_group["orientations"])
         else
-            orientations = zeros(Float64, N) # Default if not saved
+            orientations = 2π*rand(Float64, N) # Default if not saved
         end
 
         forces_raw = Matrix{Float64}(undef, 0,0) # placeholder
         forces = Vector{SVector{2, Float64}}(undef, N)
         if "forces" in keys(step_group)
             forces_raw = read(step_group["forces"])
-            forces = [SVector{2, Float64}(forces_raw[i, :]) for i in 1:size(forces_raw, 1)]
+            forces = [SVector{2, Float64}(forces_raw[:, i]) for i in 1:N]
         else
             forces = [zeros(SVector{2, Float64}) for _ in 1:N] # Default if not saved
         end
@@ -167,7 +159,7 @@ function load_trajectory(filename::String)
 
             # Load and append positions
             positions_raw = read(step_group["positions"])
-            loaded_positions = [SVector{2, Float64}(positions_raw[i, :]) for i in 1:size(positions_raw, 1)]
+            loaded_positions = [SVector{2, Float64}(positions_raw[:, i]) for i in 1:N]
             push!(trajectory_data.positions_trajectory, loaded_positions)
 
             # Load and append orientations
@@ -182,7 +174,7 @@ function load_trajectory(filename::String)
             # Load and append forces
             if "forces" in keys(step_group)
                 forces_raw = read(step_group["forces"])
-                loaded_forces = [SVector{2, Float64}(forces_raw[i, :]) for i in 1:size(forces_raw, 1)]
+                loaded_forces = [SVector{2, Float64}(forces_raw[:,i]) for i in 1:N]
                 push!(trajectory_data.forces_trajectory, loaded_forces)
             else
                 # If not saved, append a vector of zero vectors

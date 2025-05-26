@@ -70,6 +70,7 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
                 params_g["N_steps"] = parameters.N_steps
                 params_g["kBT"] = parameters.kBT
                 params_g["frictionconstant"] = parameters.frictionconstant
+                params_g["periodic_boundary_layer_depth"] = parameters.periodic_boundary_layer_depth
                 # Assuming parameters.box.box_sizes is an SVector or similar directly writable by HDF5.jl
                 params_g["box_sizes"] = parameters.box.box_sizes
 
