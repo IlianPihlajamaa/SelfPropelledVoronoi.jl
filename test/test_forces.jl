@@ -160,7 +160,7 @@ using StaticArrays
     SelfPropelledVoronoi.voronoi_tesselation!(parameter_struct, arrays, output)
 
     # Define a small epsilon for finite differencing
-    epsilon = 1e-7
+    epsilon = sqrt(eps(Float64)) # Use square root of machine epsilon for better precision
 
     # Define the number of particles to test
     num_particles_to_test = 5 # Test the first 5 particles
