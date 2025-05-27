@@ -163,20 +163,26 @@ mutable struct DumpInfo{A<:AbstractArray}
     save_r::Bool
     save_F::Bool
     save_Epot::Bool
+    save_areas::Bool
+    save_perimeters::Bool
     DumpInfo(;
         save::Bool=true,
         filename::String="dump_$(rand(Int)).h5",
         when_to_save_array=0:1000:1000000,
         save_r::Bool=true,
         save_F::Bool=false,
-        save_Epot::Bool=false
+        save_Epot::Bool=false,
+        save_areas::Bool=true,
+        save_perimeters::Bool=true
     ) = new{typeof(when_to_save_array)}(
         save,
         filename,
         when_to_save_array,
         save_r,
         save_F,
-        save_Epot
+        save_Epot,
+        save_areas,
+        save_perimeters
     )
 end
 
@@ -248,7 +254,7 @@ struct ParameterStruct{P<:Particles, CB}
         N_steps::Int=10000,
         kBT::Float64=1.0,
         frictionconstant::Float64=1.0,
-        periodic_boundary_layer_depth::Float64=1.0,
+        periodic_boundary_layer_depth::Float64=2.5,
         verbose::Bool=false,
         box::SimulationBox=SimulationBox(10.0, 10.0),
         particles=VoronoiCells(

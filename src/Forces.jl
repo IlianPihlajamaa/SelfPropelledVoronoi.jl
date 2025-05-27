@@ -34,7 +34,7 @@ with respect to particle positions.
 - The mathematical details of the force calculation (derivatives of geometry) can be complex and are implemented within the loops.
 """
 function compute_forces_SPV!(parameters, arrays, output)
-    if !verify_tesselation(parameters, arrays, output)
+    if verify_tessellation(parameters, arrays, output)
         voronoi_tesselation!(parameters, arrays, output)
     else
         update_delauney_vertices!(parameters, arrays, output)

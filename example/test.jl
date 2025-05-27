@@ -39,7 +39,7 @@ random_seed = 564574564
 Random.seed!(random_seed)
 dump_info = DumpInfo(
     save=true,
-    filename="dump_$(random_seed).h5",
+    filename="Data/dump_$(random_seed).h5",
     when_to_save_array=0:1000:1000000,
     save_r=true,
     save_F=false,
@@ -123,20 +123,11 @@ end
 
 verbose=true
 callback = visualize 
-parameter_struct = ParameterStruct(
-    N,
-    dt,
-    Nsteps,
-    kBT,
-    frictionconstant,
-    pbc_layer_depth,
-    verbose,
-    box,
-    voronoi_cells,
-    dump_info,
-    callback,
-    MersenneTwister(random_seed)
-)
+parameter_struct = ParameterStruct(N = N, dt = dt, 
+    N_steps = Nsteps, kBT = kBT, frictionconstant = frictionconstant, 
+    periodic_boundary_layer_depth = pbc_layer_depth, verbose = verbose, box = box, particles= voronoi_cells,
+    dump_info = dump_info, callback = callback, RNG = Random.MersenneTwister(random_seed))
+
 
 # Create an ArrayStruct object
 arrays = ArrayStruct(N)

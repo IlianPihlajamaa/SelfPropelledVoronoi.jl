@@ -80,50 +80,35 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
                 particles_g["rotational_diffusion_constants"] = parameters.particles.rotational_diffusion_constants
 
                 # Save Initial Step Data
-                step_g = HDF5.create_group(file_handle, current_step_str)
-                if dump_info.save_r
-                    # Assuming arrays.positions and arrays.orientations are suitable for HDF5.jl
-                    # (e.g., Vector{SVector{2, Float64}} for positions, Vector{Float64} for orientations)
 
-                    step_g["positions"] = stack(arrays.positions)
-                    step_g["orientations"] = arrays.orientations
-                end
-                if dump_info.save_F
-                    # Assuming arrays.forces is suitable (e.g., Vector{SVector{2, Float64}})
-
-                    step_g["forces"] = stack(arrays.forces)
-                end
-                if dump_info.save_Epot
-                    step_g["potential_energy"] = output.potential_energy
-                end
-                step_g["areas"] = arrays.areas
-                step_g["perimeters"] = arrays.perimeters
             end
-
-        else
-            HDF5.h5open(filename, "r+") do file_handle # Open in read-write mode
-                # Check if group for current step already exists
-                if current_step_str in keys(file_handle)
-                    error("Group for step $current_step_str already exists in $filename. Cannot append.")
-                end
-                
-                step_g = HDF5.create_group(file_handle, current_step_str)
-                if dump_info.save_r
-
-                    step_g["positions"] = stack(arrays.positions)
-                    step_g["orientations"] = arrays.orientations
-                end
-                if dump_info.save_F
-                    step_g["forces"] = stack(arrays.forces)
-                end
-                if dump_info.save_Epot
-                    step_g["potential_energy"] = output.potential_energy
-                end
-                step_g["areas"] = arrays.areas
-                step_g["perimeters"] = arrays.perimeters
-            end
-
         end
+        
+        HDF5.h5open(filename, "r+") do file_handle # Open in read-write mode
+            # Check if group for current step already exists
+            if current_step_str in keys(file_handle)
+                error("Group for step $current_step_str already exists in $filename. Cannot append.")
+            end
+            
+            step_g = HDF5.create_group(file_handle, current_step_str)
+            if dump_info.save_r
+                step_g["positions"] = stack(arrays.positions)
+                step_g["orientations"] = arrays.orientations
+            end
+            if dump_info.save_F
+                step_g["forces"] = stack(arrays.forces)
+            end
+            if dump_info.save_Epot
+                step_g["potential_energy"] = output.potential_energy
+            end
+            if dump_info.save_areas
+                step_g["areas"] = arrays.areas
+            end
+            if dump_info.save_perimeters
+                step_g["perimeters"] = arrays.perimeters
+            end
+        end
+
     else
         throw(ArgumentError("Filename must end with .h5 or .hdf5. Provided: $filename"))
     end

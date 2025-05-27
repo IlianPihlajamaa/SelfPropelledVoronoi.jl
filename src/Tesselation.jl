@@ -195,10 +195,10 @@ function voronoi_tesselation!(parameters, arrays, output)
         k = facet[3] # This is idx3_pbc
 
         
-        sorted_triplet = (i,j,k)
+        triplet = (i,j,k)
         
-        if !(sorted_triplet in arrays.neighborlist.delaunay_facet_triplets)
-            push!(arrays.neighborlist.delaunay_facet_triplets, sorted_triplet)
+        if !(triplet in arrays.neighborlist.delaunay_facet_triplets)
+            push!(arrays.neighborlist.delaunay_facet_triplets, triplet)
         end
     
         # add these to the voronoi neighborlist for every particle pair, checking if it is already filled
@@ -418,4 +418,57 @@ function verify_tessellation(parameters, arrays, output)
         end
     end
     return true
+end
+
+
+
+
+"""
+    update_delauney_vertices!(parameters, arrays, output)
+
+This function updates the arrays.neighborlist.voronoi_vertices field and the 
+arrays.neighborlist.voronoi_vertex_positions_per_particle fields based on the current
+Delaunay triangulation of the system. It is intended to be called if the Delaunay triangulation is
+still up to date, but the Voronoi vertices need to be recalculated, for example, after a change in particle positions.
+"""
+function  update_voronoi_vertices!(parameters, arrays, output)
+    voronoi_vertices = SVector{2, Float64}[]
+    voronoi_vertices_per_particle = [SVector{2, Float64}[] for _ in 1:length(arrays.neighborlist.positions_with_pbc)]
+    voronoi_vertex_indices = [Int[] for _ in 1:length(arrays.neighborlist.positions_with_pbc)]
+    # loop through arrays.neighborlist.delaunay_facet_triplets, and recompute the circumcenter
+    for triplet in arrays.neighborlist.delaunay_facet_triplets
+        i, j, k = triplet
+        # compute the circumcenter of the triangle defined by the triplet
+        circumcenter_position = circumcenter(
+            arrays.neighborlist.positions_with_pbc[i],
+            arrays.neighborlist.positions_with_pbc[j],
+            arrays.neighborlist.positions_with_pbc[k]
+        )
+        # add the circumcenter to the voronoi vertices list
+        push!(voronoi_vertices, circumcenter_position)
+        # add the circumcenter to the voronoi vertices per particle list
+        push!(voronoi_vertices_per_particle[i], circumcenter_position)
+        push!(voronoi_vertices_per_particle[j], circumcenter_position)
+        push!(voronoi_vertices_per_particle[k], circumcenter_position)
+
+        # add the index of the circumcenter to the voronoi vertex indices list
+        push!(voronoi_vertex_indices[i], length(voronoi_vertices))
+        push!(voronoi_vertex_indices[j], length(voronoi_vertices))
+        push!(voronoi_vertex_indices[k], length(voronoi_vertices))
+    end
+
+    for particle in 1:parameters.N
+        voronoi_center = arrays.positions[particle]
+        # sort the voronoi vertex indices counterclockwise
+        voronoi_vertex_indices_new, voronoi_vertex_positions_per_particle_new = sort_indices_counter_clockwise(voronoi_vertex_indices[particle], voronoi_vertex_positions_per_particle[particle], voronoi_vertices, voronoi_center)
+        # replace the voronoi vertex indices with the new ones
+        voronoi_vertex_indices[particle] = voronoi_vertex_indices_new
+        voronoi_vertex_positions_per_particle[particle] = voronoi_vertex_positions_per_particle_new
+    end
+
+    arrays.neighborlist.voronoi_vertices = voronoi_vertices
+    arrays.neighborlist.voronoi_neighbors = voronoi_neighbors
+    arrays.neighborlist.voronoi_vertex_indices = voronoi_vertex_indices
+    arrays.neighborlist.voronoi_vertex_positions_per_particle = voronoi_vertex_positions_per_particle
+    arrays.neighborlist.cell_centers_that_share_a_vertex = cell_centers_that_share_a_vertex
 end
