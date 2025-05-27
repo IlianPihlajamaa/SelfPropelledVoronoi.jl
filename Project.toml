@@ -9,9 +9,11 @@ Quickhull = "baca2653-9c88-49d2-a488-12dbf25fc4fb"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SmallCollections = "2b935e18-93d6-40ac-ae34-fe54c09f00e1"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+JLD2 = "033835bb-8acc-507a-8720-f24add3f0f82"
 
 [compat]
 HDF5 = "0.17.2"
+JLD2 = "0.4"
 Random = "1.10.0"
 SmallCollections = "0.4.0"
 StaticArrays = "1.9.13"

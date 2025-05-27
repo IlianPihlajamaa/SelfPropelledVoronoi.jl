@@ -1,5 +1,3 @@
-
-
 """
     do_time_step(parameters, arrays, output)
 
@@ -275,6 +273,12 @@ function run_simulation!(parameters, arrays, output)
             end
         end
 
+        # Check if a restart file should be saved
+        if parameters.restart_info.save_restart
+            if step % parameters.restart_info.restart_save_interval == 0
+                save_restart_file(parameters, arrays, output)
+            end
+        end
 
         # Check if the simulation should be stopped
         step = step + 1

@@ -34,6 +34,31 @@ struct VoronoiCells <: Particles
 end
 
 """
+    RestartInfo(; save_restart=false, restart_filename="restart.jld2", restart_save_interval=1000)
+
+A mutable struct that holds parameters for controlling the saving of simulation restart files.
+
+# Fields
+- `save_restart::Bool`: A boolean flag to enable (`true`) or disable (`false`) saving of restart files. Defaults to `false`.
+- `restart_filename::String`: The name of the file where restart data will be saved. Defaults to `"restart.jld2"`.
+- `restart_save_interval::Int`: The frequency (in simulation steps) at which restart data should be saved. Defaults to `1000`.
+"""
+mutable struct RestartInfo
+    save_restart::Bool
+    restart_filename::String
+    restart_save_interval::Int
+    RestartInfo(;
+        save_restart::Bool=false,
+        restart_filename::String="restart.jld2",
+        restart_save_interval::Int=1000
+    ) = new(
+        save_restart,
+        restart_filename,
+        restart_save_interval
+    )
+end
+
+"""
     SimulationBox(Lx, Ly)
 
 Defines the simulation domain, typically a rectangular box with periodic boundary conditions.
@@ -228,6 +253,7 @@ Type parameters:
 - `dump_info::DumpInfo`: A `DumpInfo` struct containing parameters for controlling how simulation data is saved to files.
 - `callback::CB`: A callback function (of type `CB`) that can be executed at specified intervals during the simulation (e.g., for custom analysis or logging).
 - `RNG::Random.MersenneTwister`: An instance of a random number generator (specifically `MersenneTwister`) used for stochastic processes in the simulation.
+- `restart_info::RestartInfo`: A `RestartInfo` struct containing parameters for controlling how simulation restart data is saved.
 """
 struct ParameterStruct{P<:Particles, CB}
     N::Int
@@ -240,6 +266,7 @@ struct ParameterStruct{P<:Particles, CB}
     box::SimulationBox
     particles::P
     dump_info::DumpInfo
+    restart_info::RestartInfo
     callback::CB
     RNG::Random.MersenneTwister
     function ParameterStruct(;
@@ -260,6 +287,7 @@ struct ParameterStruct{P<:Particles, CB}
             ones(Float64, 100)    # rotational_diffusion_constants
         ),
         dump_info::DumpInfo=DumpInfo(),
+        restart_info::RestartInfo=RestartInfo(),
         callback=x->nothing,  # Default callback does nothing
         RNG::Random.MersenneTwister=Random.MersenneTwister(1234)
     ) 
@@ -274,6 +302,7 @@ struct ParameterStruct{P<:Particles, CB}
             box,
             particles,
             dump_info,
+            restart_info,
             callback,
             RNG
         )

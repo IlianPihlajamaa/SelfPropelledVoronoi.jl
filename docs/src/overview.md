@@ -25,3 +25,7 @@ The behavior of particles in `SelfPropelledVoronoi.jl` is governed by a few key 
     *   The simulation is performed in a rectangular domain with periodic boundary conditions. This means that particles exiting one side of the box re-enter from the opposite side, allowing for the simulation of bulk system behavior without edge effects.
 
 By combining these elements, `SelfPropelledVoronoi.jl` provides a tool to explore how local interactions and active forces at the particle level give rise to complex, large-scale behaviors in 2D active systems. The reference to Bi et al. (Physical Review X 6.2 (2016): 021011) provides an introduction to this model.
+
+## Simulation Restart
+
+`SelfPropelledVoronoi.jl` supports saving the complete simulation state to a JLD2 file, allowing for later resumption. This is useful for long simulations to recover from interruptions or to continue runs. The functionality is configured using the `RestartInfo` struct within the `ParameterStruct`. For detailed setup instructions, code examples on how to configure `RestartInfo`, and how to use `load_restart_file` to resume a simulation, please see the "[Resuming Simulations with Restart Files](#)" section on the [Examples](examples.md) page.

@@ -1,5 +1,28 @@
 
 
+using JLD2
+
+function load_restart_file(filename::String)
+    if !isfile(filename)
+        error("Restart file not found: $filename")
+        # Or return an indicative value, e.g., (nothing, nothing, nothing)
+        # depending on desired error handling strategy.
+    end
+
+    try
+        jldopen(filename, "r") do file
+            parameters = file["parameters"]
+            arrays = file["arrays"]
+            output = file["output"]
+            return parameters, arrays, output
+        end
+    catch e
+        println("Error loading restart file $filename: $e")
+        # Rethrow or return an error indicator as appropriate
+        rethrow(e)
+    end
+end
+
 function load_simulation_state(filename::String)
     h5open(filename, "r") do file
         # Read simulation parameters

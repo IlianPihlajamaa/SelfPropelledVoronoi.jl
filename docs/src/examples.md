@@ -148,3 +148,171 @@ run_simulation!(params, arrays, output)
 # the total number of steps that were actually performed (which should be stored in output.steps_done).
 println("Simulation finished. Steps done: $(output.steps_done)")
 ```
+
+### Resuming Simulations with Restart Files
+
+The simulation restart functionality allows users to save the complete state of a simulation at specified intervals and to resume the simulation from one of these saved states at a later time. This is particularly useful for long simulations, allowing recovery from interruptions or for continuing runs that require more time. Restart files are saved using the JLD2.jl package.
+
+#### Enabling Restart Functionality
+
+Restart capabilities are controlled via the `RestartInfo` struct, which is part of the main `ParameterStruct`. The key fields in `RestartInfo` are:
+
+*   `save_restart::Bool`: Set to `true` to enable saving restart files. Defaults to `false`.
+*   `restart_filename::String`: The name of the file where restart data will be saved (e.g., `"my_simulation_restart.jld2"`). Defaults to `"restart.jld2"`.
+*   `restart_save_interval::Int`: The interval (in simulation steps) at which restart files will be saved. For example, a value of `1000` means a restart file is saved every 1000 steps. Defaults to `1000`.
+
+Here's how you configure it when setting up your `ParameterStruct`:
+
+```julia
+using SelfPropelledVoronoi
+
+# Define other parameters like N, box, voronoi_cells, etc.
+N = 100
+box = SimulationBox(10.0, 10.0)
+# ... (setup other parameters: dt, N_steps, kBT, particles, dump_info, callback, RNG)
+
+# Configure RestartInfo
+restart_config = RestartInfo(
+    save_restart = true,
+    restart_filename = "my_simulation_restart.jld2", # Choose a descriptive name
+    restart_save_interval = 5000 # Save every 5000 steps
+)
+
+parameter_struct = ParameterStruct(
+    N = N,
+    dt = 0.01, 
+    N_steps = 100000,
+    kBT = 1.0,
+    frictionconstant = 1.0,
+    periodic_boundary_layer_depth = 2.5,
+    verbose = true,
+    box = box,
+    particles = VoronoiCells(3.8*ones(N), ones(N), ones(N), ones(N), ones(N), 0.1*ones(N)), # Example particle setup
+    dump_info = DumpInfo(save=false), # Assuming default dump_info or customize as needed
+    callback = (p,a,o) -> nothing,
+    RNG = Random.MersenneTwister(1234),
+    restart_info = restart_config # Pass the configured RestartInfo
+)
+```
+
+#### Automatic Saving During Simulation
+
+Once `restart_info.save_restart` is set to `true` in the `ParameterStruct`, the `run_simulation!` function will automatically handle the saving of restart files. At every `restart_info.restart_save_interval` steps, `run_simulation!` internally calls `save_restart_file` to store the current `ParameterStruct`, `ArrayStruct`, and `Output` struct into the specified JLD2 file.
+
+#### Loading a Simulation from a Restart File
+
+To resume a simulation, you can use the `load_restart_file(filename::String)` function. This function reads the saved structs from the JLD2 restart file.
+
+Here's a conceptual example of how to integrate this into your simulation script:
+
+```julia
+using SelfPropelledVoronoi
+using Random # For MersenneTwister
+
+# --- Configuration for Restarting ---
+should_attempt_restart::Bool = true # Set to true to try loading from a restart file
+path_to_restart_file::String = "my_simulation_restart.jld2" # Must match the filename used for saving
+
+# --- Define Base Simulation Parameters ---
+# These might be overwritten if a restart file is successfully loaded.
+N_particles = 100
+sim_dt = 0.01
+total_simulation_steps = 200000 # Example: Total steps you want for this run
+
+# Initialize placeholder structs (will be overwritten if loading is successful)
+params::ParameterStruct = ParameterStruct(N=N_particles, dt=sim_dt, N_steps=total_simulation_steps) # Minimal init
+arrays::ArrayStruct = ArrayStruct(N_particles)
+output::Output = Output()
+
+
+if should_attempt_restart && isfile(path_to_restart_file)
+    println("Attempting to load simulation from: ", path_to_restart_file)
+    try
+        loaded_params, loaded_arrays, loaded_output = load_restart_file(path_to_restart_file)
+        
+        params = loaded_params
+        arrays = loaded_arrays
+        output = loaded_output
+        
+        # IMPORTANT: Adjust parameters for the continued run as needed
+        params.N_steps = total_simulation_steps # Ensure the simulation runs for the new total duration
+        # Example: Update the callback function if it's not serializable or if you want to change it
+        # params.callback = (p,a,o) -> my_new_visualization_or_analysis(p,a,o) 
+        # Example: Adjust HDF5 dump schedule if necessary
+        # params.dump_info.when_to_save_array = output.steps_done:1000:total_simulation_steps 
+
+        println("Successfully loaded state at step ", output.steps_done, ". Resuming simulation.")
+        
+    catch e
+        println("Error loading restart file: ", e, ". Starting a fresh simulation.")
+        # Fallback: Initialize a fresh simulation if loading fails
+        # (Re-initialize params, arrays, output with your standard new simulation setup)
+        sim_box = SimulationBox(10.0, 10.0) # Example box
+        example_particles = VoronoiCells(3.8*ones(N_particles), ones(N_particles), ones(N_particles), ones(N_particles), ones(N_particles), 0.1*ones(N_particles))
+        restart_config = RestartInfo(save_restart=true, restart_filename=path_to_restart_file, restart_save_interval=5000)
+
+        params = ParameterStruct(
+            N = N_particles, 
+            dt = sim_dt, 
+            N_steps = total_simulation_steps,
+            kBT = 1.0,
+            frictionconstant = 1.0,
+            periodic_boundary_layer_depth = 2.5,
+            verbose = true,
+            box = sim_box,
+            particles = example_particles,
+            dump_info = DumpInfo(save=false), 
+            callback = (p,a,o) -> nothing, 
+            RNG = Random.MersenneTwister(1234),
+            restart_info = restart_config
+        )
+        arrays = ArrayStruct(N_particles)
+        # Initialize positions and orientations for a new simulation
+        for i in 1:N_particles
+            arrays.positions[i] = SVector(rand(params.RNG)*params.box.box_sizes[1], rand(params.RNG)*params.box.box_sizes[2])
+            arrays.orientations[i] = 2pi * rand(params.RNG)
+        end
+        output = Output() # Fresh output struct
+    end
+else
+    if should_attempt_restart
+        println("Restart file not found: ", path_to_restart_file, ". Starting a fresh simulation.")
+    else
+        println("Starting a fresh simulation (restart not enabled).")
+    end
+    # Initialize a fresh simulation
+    sim_box = SimulationBox(10.0, 10.0) # Example box
+    example_particles = VoronoiCells(3.8*ones(N_particles), ones(N_particles), ones(N_particles), ones(N_particles), ones(N_particles), 0.1*ones(N_particles))
+    restart_config = RestartInfo(save_restart=true, restart_filename=path_to_restart_file, restart_save_interval=5000)
+
+    params = ParameterStruct(
+        N = N_particles, 
+        dt = sim_dt, 
+        N_steps = total_simulation_steps,
+        kBT = 1.0,
+        frictionconstant = 1.0,
+        periodic_boundary_layer_depth = 2.5,
+        verbose = true,
+        box = sim_box,
+        particles = example_particles,
+        dump_info = DumpInfo(save=false), 
+        callback = (p,a,o) -> nothing, 
+        RNG = Random.MersenneTwister(1234),
+        restart_info = restart_config
+    )
+    arrays = ArrayStruct(N_particles)
+    # Initialize positions and orientations for a new simulation
+    for i in 1:N_particles
+        arrays.positions[i] = SVector(rand(params.RNG)*params.box.box_sizes[1], rand(params.RNG)*params.box.box_sizes[2])
+        arrays.orientations[i] = 2pi * rand(params.RNG)
+    end
+    output = Output() # Fresh output struct
+end
+
+# Run the simulation (either resumed or fresh)
+run_simulation!(params, arrays, output)
+
+println("Simulation finished. Final steps done: $(output.steps_done)")
+```
+
+This pattern allows your script to seamlessly resume from the last saved point or start a new simulation if no valid restart file is found or if restarting is disabled. Remember to adjust the particle initialization and other `ParameterStruct` fields in the "fresh simulation" branches to match your desired default setup.

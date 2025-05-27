@@ -30,6 +30,7 @@ end
 include("test_forces.jl")
 include("test_tesselation.jl")
 include("test_loading_and_saving.jl")
+include("test_restart.jl")
               
               
               

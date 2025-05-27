@@ -3,6 +3,12 @@ import Pkg; Pkg.activate("example")
 using Revise
 using SelfPropelledVoronoi, CairoMakie, StaticArrays, Random, Quickhull, ColorSchemes
 using Statistics
+
+# --- Restart Configuration ---
+restart_simulation::Bool = true # Set to true to attempt restart
+restart_filepath::String = "restart_test.jld2" # Path to the restart file
+# --- End Restart Configuration ---
+
 N = 50
 rho = 1.3
 L = sqrt(N/rho)
@@ -137,22 +143,63 @@ parameter_struct = ParameterStruct(
     callback,
     MersenneTwister(random_seed)
 )
-
-# Create an ArrayStruct object
-arrays = ArrayStruct(N)
-
-# arrays.positions .= [rand(SVector{2, Float64}) .* box.box_sizes for _ in 1:N]
-#put particles on cubic lattice
-x = rand(Float64, N) .* box.box_sizes[1]
-y = rand(Float64, N) .* box.box_sizes[2]
-arrays.positions .= SVector.(x, y)
+# Configure restart saving for the initial parameter_struct
+parameter_struct.restart_info.save_restart = true
+parameter_struct.restart_info.restart_filename = restart_filepath
+parameter_struct.restart_info.restart_save_interval = 500
 
 
-arrays.orientations .= 2π*rand(Float64, N) 
+if restart_simulation && isfile(restart_filepath)
+    println("Attempting to restart simulation from: $restart_filepath")
+    try
+        loaded_params, loaded_arrays, loaded_output = SelfPropelledVoronoi.load_restart_file(restart_filepath)
+        
+        # Assign loaded data
+        parameter_struct = loaded_params
+        arrays = loaded_arrays
+        output = loaded_output
+
+        # Optionally, override or update some parameters for the continued simulation
+        # For example, ensure Nsteps allows for more steps from the restart point
+        parameter_struct.N_steps = Nsteps # Ensure Nsteps is the total desired steps
+        # Ensure restart saving continues if desired for the new run
+        parameter_struct.restart_info.save_restart = true
+        parameter_struct.restart_info.restart_filename = restart_filepath
+        parameter_struct.restart_info.restart_save_interval = 500
+        # Update callback if it's not properly serialized/deserialized or if you want a new one
+        parameter_struct.callback = visualize 
 
 
-# Create an Output object
-output = Output()
+        println("Successfully restarted from step $(output.steps_done). Continuing simulation.")
+        # Clear lists for visualization if you want to see only the new part
+        empty!(energy_list)
+        empty!(area_std_list)
+        empty!(mean_perimeter_list)
+
+    catch e
+        println("Failed to load restart file: $e. Starting a new simulation.")
+        # Initialize fresh if loading fails
+        arrays = ArrayStruct(N)
+        x = rand(Float64, N) .* box.box_sizes[1]
+        y = rand(Float64, N) .* box.box_sizes[2]
+        arrays.positions .= SVector.(x, y)
+        arrays.orientations .= 2π*rand(Float64, N)
+        output = Output()
+    end
+else
+    if restart_simulation
+        println("Restart file not found: $restart_filepath. Starting a new simulation.")
+    else
+        println("Starting a new simulation (restart_simulation is false).")
+    end
+    # Original initialization for a new simulation
+    arrays = ArrayStruct(N)
+    x = rand(Float64, N) .* box.box_sizes[1]
+    y = rand(Float64, N) .* box.box_sizes[2]
+    arrays.positions .= SVector.(x, y)
+    arrays.orientations .= 2π*rand(Float64, N)
+    output = Output()
+end
 
 # Run the simulation
 run_simulation!(parameter_struct, arrays, output)

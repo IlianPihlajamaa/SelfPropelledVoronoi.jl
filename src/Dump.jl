@@ -1,5 +1,8 @@
 using HDF5
+using JLD2 # Added JLD2
+# Assuming ParameterStruct, ArrayStruct, Output are available from DataStructs.jl included in SelfPropelledVoronoi.jl
 
+export save_simulation_state!, save_restart_file, load_restart_file # Added exports
 
 """
     save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct, output::Output)
@@ -129,4 +132,60 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
     end
 
     return nothing
+end
+
+# --- Restart Functionality moved from Restart.jl and Load.jl ---
+
+"""
+    save_restart_file(param_struct::ParameterStruct, array_struct::ArrayStruct, out_struct::Output)
+
+Saves the current state of the simulation to a JLD2 file for restarting.
+
+The function opens a file specified by `param_struct.restart_info.restart_filename`
+and saves `param_struct`, `array_struct`, and `out_struct` into the file.
+"""
+function save_restart_file(param_struct::ParameterStruct, array_struct::ArrayStruct, out_struct::Output)
+    filename = param_struct.restart_info.restart_filename
+    try
+        jldopen(filename, "w") do file
+            file["parameters"] = param_struct
+            file["arrays"] = array_struct
+            file["output"] = out_struct
+        end
+        if param_struct.verbose
+            println("Restart file saved to $filename at step $(out_struct.steps_done).")
+        end
+    catch e
+        println("Error saving restart file $filename: $e")
+        # Depending on the desired behavior, one might rethrow the error or handle it differently.
+    end
+end
+
+"""
+    load_restart_file(filename::String)
+
+Loads the simulation state from a JLD2 restart file.
+
+Checks if the file exists, then attempts to load `parameters`, `arrays`, and `output`
+structs from it.
+"""
+function load_restart_file(filename::String)
+    if !isfile(filename)
+        error("Restart file not found: $filename")
+        # Or return an indicative value, e.g., (nothing, nothing, nothing)
+        # depending on desired error handling strategy.
+    end
+
+    try
+        jldopen(filename, "r") do file
+            parameters = file["parameters"]
+            arrays = file["arrays"]
+            output = file["output"]
+            return parameters, arrays, output
+        end
+    catch e
+        println("Error loading restart file $filename: $e")
+        # Rethrow or return an error indicator as appropriate
+        rethrow(e)
+    end
 end
