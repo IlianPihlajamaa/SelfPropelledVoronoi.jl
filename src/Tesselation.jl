@@ -133,9 +133,7 @@ function update_positions_with_pbcs!(parameters, arrays, output)
     end
     arrays.neighborlist.positions_with_pbc = positions_with_pbc
     arrays.neighborlist.position_indices = pbc_position_indices
-    # resize the array to the new size
-    # positions_with_pbc = resize!(positions_with_pbc, N_particles)
-    # pbc_position_indices = resize!(pbc_position_indices, N_particles)
+
     return 
 end
 
@@ -168,22 +166,26 @@ The process involves:
 - It relies on `Quickhull.jl` for the Delaunay triangulation and helper functions like `update_positions_with_pbcs!`, `circumcenter`, and `sort_indices_counter_clockwise`.
 """
 function voronoi_tesselation!(parameters, arrays, output)
-
     N = parameters.N
     Lx, Ly = parameters.box.box_sizes
     update_positions_with_pbcs!(parameters, arrays, output)
 
     # Initialize or clear delaunay_facet_triplets
-    empty!(arrays.neighborlist.delaunay_facet_triplets)
 
     # get the delauney triangulation
     positions_with_pbc = arrays.neighborlist.positions_with_pbc
     N_pbc = length(positions_with_pbc)
-    voronoi_vertices = SVector{2, Float64}[]
-    voronoi_vertex_indices = [Int[] for _ in 1:N_pbc]
-    voronoi_vertex_positions_per_particle = [SVector{2, Float64}[] for _ in 1:N_pbc]
-    voronoi_neighbors = [Int[] for _ in 1:N_pbc]
-    cell_centers_that_share_a_vertex = Tuple{Int, Int, Int}[]
+
+    empty!(arrays.neighborlist.delaunay_facet_triplets)
+    empty!(arrays.neighborlist.voronoi_vertices)
+    empty!(arrays.neighborlist.voronoi_neighbors)
+    empty!(arrays.neighborlist.voronoi_vertex_positions_per_particle)
+    empty!(arrays.neighborlist.voronoi_vertex_indices)
+    for _ in 1:N_pbc
+        push!(arrays.neighborlist.voronoi_neighbors, Int[])
+        push!(arrays.neighborlist.voronoi_vertex_positions_per_particle, SVector{2, Float64}[])
+        push!(arrays.neighborlist.voronoi_vertex_indices, Int[])
+    end
 
 
     tri = Quickhull.delaunay(positions_with_pbc)
@@ -197,28 +199,26 @@ function voronoi_tesselation!(parameters, arrays, output)
         
         triplet = (i,j,k)
         
-        if !(triplet in arrays.neighborlist.delaunay_facet_triplets)
-            push!(arrays.neighborlist.delaunay_facet_triplets, triplet)
-        end
+        push!(arrays.neighborlist.delaunay_facet_triplets, triplet)
     
         # add these to the voronoi neighborlist for every particle pair, checking if it is already filled
-        if !(j in voronoi_neighbors[i])
-            push!(voronoi_neighbors[i], j)
+        if !(j in arrays.neighborlist.voronoi_neighbors[i])
+            push!(arrays.neighborlist.voronoi_neighbors[i], j)
         end
-        if !(k in voronoi_neighbors[i])
-            push!(voronoi_neighbors[i], k)
+        if !(k in arrays.neighborlist.voronoi_neighbors[i])
+            push!(arrays.neighborlist.voronoi_neighbors[i], k)
         end
-        if !(i in voronoi_neighbors[j])
-            push!(voronoi_neighbors[j], i)
+        if !(i in arrays.neighborlist.voronoi_neighbors[j])
+            push!(arrays.neighborlist.voronoi_neighbors[j], i)
         end
-        if !(k in voronoi_neighbors[j])
-            push!(voronoi_neighbors[j], k)
+        if !(k in arrays.neighborlist.voronoi_neighbors[j])
+            push!(arrays.neighborlist.voronoi_neighbors[j], k)
         end
-        if !(i in voronoi_neighbors[k])
-            push!(voronoi_neighbors[k], i)
+        if !(i in arrays.neighborlist.voronoi_neighbors[k])
+            push!(arrays.neighborlist.voronoi_neighbors[k], i)
         end
-        if !(j in voronoi_neighbors[k])
-            push!(voronoi_neighbors[k], j)
+        if !(j in arrays.neighborlist.voronoi_neighbors[k])
+            push!(arrays.neighborlist.voronoi_neighbors[k], j)
         end
 
         # compute the voronoi vertices as the circumcenter of the facet
@@ -230,33 +230,26 @@ function voronoi_tesselation!(parameters, arrays, output)
             positions_with_pbc[k]
         )
 
-        push!(voronoi_vertices, voronoi_vertex_position)
-        push!(cell_centers_that_share_a_vertex, (i, j, k))
+        push!(arrays.neighborlist.voronoi_vertices, voronoi_vertex_position)
         # # add the voronoi vertex to the voronoi vertices list
 
-        push!(voronoi_vertex_indices[i], length(voronoi_vertices))
-        push!(voronoi_vertex_positions_per_particle[i], voronoi_vertex_position)
-        push!(voronoi_vertex_indices[j], length(voronoi_vertices))
-        push!(voronoi_vertex_positions_per_particle[j], voronoi_vertex_position)
-        push!(voronoi_vertex_indices[k], length(voronoi_vertices))
-        push!(voronoi_vertex_positions_per_particle[k], voronoi_vertex_position)
+        push!(arrays.neighborlist.voronoi_vertex_indices[i], length(arrays.neighborlist.voronoi_vertices))
+        push!(arrays.neighborlist.voronoi_vertex_positions_per_particle[i], voronoi_vertex_position)
+        push!(arrays.neighborlist.voronoi_vertex_indices[j], length(arrays.neighborlist.voronoi_vertices))
+        push!(arrays.neighborlist.voronoi_vertex_positions_per_particle[j], voronoi_vertex_position)
+        push!(arrays.neighborlist.voronoi_vertex_indices[k], length(arrays.neighborlist.voronoi_vertices))
+        push!(arrays.neighborlist.voronoi_vertex_positions_per_particle[k], voronoi_vertex_position)
     end
 
     for particle in 1:parameters.N
         voronoi_center = arrays.positions[particle]
         # sort the voronoi vertex indices counterclockwise
-        voronoi_vertex_indices_new, voronoi_vertex_positions_per_particle_new = sort_indices_counter_clockwise(voronoi_vertex_indices[particle], voronoi_vertex_positions_per_particle[particle], voronoi_vertices, voronoi_center)
+        voronoi_vertex_indices_new, voronoi_vertex_positions_per_particle_new = sort_indices_counter_clockwise(arrays.neighborlist.voronoi_vertex_indices[particle], arrays.neighborlist.voronoi_vertex_positions_per_particle[particle], arrays.neighborlist.voronoi_vertices, voronoi_center)
         # replace the voronoi vertex indices with the new ones
-        voronoi_vertex_indices[particle] = voronoi_vertex_indices_new
-        voronoi_vertex_positions_per_particle[particle] = voronoi_vertex_positions_per_particle_new
+        arrays.neighborlist.voronoi_vertex_indices[particle] = voronoi_vertex_indices_new
+        arrays.neighborlist.voronoi_vertex_positions_per_particle[particle] = voronoi_vertex_positions_per_particle_new
     end
 
-    arrays.neighborlist.voronoi_vertices = voronoi_vertices
-    arrays.neighborlist.voronoi_neighbors = voronoi_neighbors
-    arrays.neighborlist.voronoi_vertex_indices = voronoi_vertex_indices
-    arrays.neighborlist.voronoi_vertex_positions_per_particle = voronoi_vertex_positions_per_particle
-    arrays.neighborlist.cell_centers_that_share_a_vertex = cell_centers_that_share_a_vertex
-    # The field arrays.neighborlist.delaunay_facet_triplets is already updated in the loop.
     return 
 end
 
@@ -377,8 +370,15 @@ the circumcircle of the triangle does not contain any other particle that is not
 # Notes
 - The function assumes that the Voronoi tessellation has already been computed and that the necessary fields in `arrays.neighborlist` are populated, including `delaunay_facet_triplets`, `positions_with_pbc`, and `voronoi_neighbors`.
 - The field arrays.neighborlist.positions_with_pbc is updated to include periodic boundary conditions.
+- If the flag `arrays.neighborlist.check_tesselation` is set to `false`, the function immediately returns `false`, indicating that tessellation verification is not required or has been disabled.
 """
 function verify_tessellation(parameters, arrays, output)
+    # test if we verify the tessellation
+    if !arrays.neighborlist.check_tesselation
+        return false
+    end
+
+
     epsilon = 1e-9
     update_positions_with_pbcs!(parameters, arrays, output)
 
@@ -433,7 +433,7 @@ still up to date, but the Voronoi vertices need to be recalculated, for example,
 """
 function  update_voronoi_vertices!(parameters, arrays, output)
     voronoi_vertices = SVector{2, Float64}[]
-    voronoi_vertices_per_particle = [SVector{2, Float64}[] for _ in 1:length(arrays.neighborlist.positions_with_pbc)]
+    voronoi_vertex_positions_per_particle = [SVector{2, Float64}[] for _ in 1:length(arrays.neighborlist.positions_with_pbc)]
     voronoi_vertex_indices = [Int[] for _ in 1:length(arrays.neighborlist.positions_with_pbc)]
     # loop through arrays.neighborlist.delaunay_facet_triplets, and recompute the circumcenter
     for triplet in arrays.neighborlist.delaunay_facet_triplets
@@ -447,9 +447,9 @@ function  update_voronoi_vertices!(parameters, arrays, output)
         # add the circumcenter to the voronoi vertices list
         push!(voronoi_vertices, circumcenter_position)
         # add the circumcenter to the voronoi vertices per particle list
-        push!(voronoi_vertices_per_particle[i], circumcenter_position)
-        push!(voronoi_vertices_per_particle[j], circumcenter_position)
-        push!(voronoi_vertices_per_particle[k], circumcenter_position)
+        push!(voronoi_vertex_positions_per_particle[i], circumcenter_position)
+        push!(voronoi_vertex_positions_per_particle[j], circumcenter_position)
+        push!(voronoi_vertex_positions_per_particle[k], circumcenter_position)
 
         # add the index of the circumcenter to the voronoi vertex indices list
         push!(voronoi_vertex_indices[i], length(voronoi_vertices))
@@ -467,8 +467,6 @@ function  update_voronoi_vertices!(parameters, arrays, output)
     end
 
     arrays.neighborlist.voronoi_vertices = voronoi_vertices
-    arrays.neighborlist.voronoi_neighbors = voronoi_neighbors
     arrays.neighborlist.voronoi_vertex_indices = voronoi_vertex_indices
     arrays.neighborlist.voronoi_vertex_positions_per_particle = voronoi_vertex_positions_per_particle
-    arrays.neighborlist.cell_centers_that_share_a_vertex = cell_centers_that_share_a_vertex
 end

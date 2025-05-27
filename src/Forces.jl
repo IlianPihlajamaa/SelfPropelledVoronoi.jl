@@ -1,4 +1,48 @@
 
+function circumcenter_derivative(ri, rj, rm)
+    xi, yi = ri
+    xj, yj = rj
+    xm, ym = rm
+    # from mathematica:
+    dhx_dxi = -1/2*((yj - ym)*(2*xi*(xm*(-yi + yj) + xj*(yi - ym)) + xj^2*(-yi + ym) + xi^2*(-yj + ym) + 
+    (yi - yj)*(xm^2 + yi*yj - (yi + yj)*ym + ym^2)))/ (xm*(-yi + yj) + xj*(yi - ym) + xi*(-yj + ym))^2
+
+    dhx_dyi = ((yj - ym)*(xi^2*(xj - xm) + xj^2*xm + xm*(yi - yj)^2 - xj*(xm^2 + (yi - ym)^2) + xi*(-xj^2 + xm^2 + 2*yi*yj - yj^2 -  2*yi*ym + ym^2)))/ (2*(xm*(-yi + yj) + xj*(yi - ym) + xi*(-yj + ym))^2)
+
+    dhy_dxi = -1/2*((xj - xm)*(xj^2*(yi - ym) + xi^2*(yj - ym) - (yi - yj)*(xm^2 + yi*yj - (yi + yj)*ym + ym^2) +  2*xi*(xm*(yi - yj) + xj*(-yi + ym))))/ (xm*(-yi + yj) + xj*(yi - ym) + xi*(-yj + ym))^2
+
+    dhy_dyi = -1/2*((xj - xm)*(xi^2*(xj - xm) + xj^2*xm + xm*(yi - yj)^2 -  xj*(xm^2 + (yi - ym)^2) + xi*(-xj^2 + xm^2 + 2*yi*yj -  yj^2 - 2*yi*ym + ym^2)))/  (xm*(-yi + yj) + xj*(yi - ym) + xi*(-yj + ym))^2
+
+    return dhx_dxi, dhy_dxi, dhx_dyi, dhy_dyi
+end
+
+
+function dAi_dhij(hi, hnext, hprev)
+    # hi, hnext, hprev are the positions of the vertices in the Voronoi cell
+    # returns the derivatives of the area with respect to the vertex positions
+    dAi_dhijx = (hnext[2] - hprev[2])
+    dAi_dhijy = (hprev[1] - hnext[1])
+    return dAi_dhijx, dAi_dhijy
+end
+
+function dPi_dhij(hi, hnext, hprev)
+    # hi, hnext, hprev are the positions of the vertices in the Voronoi cell
+    # returns the derivatives of the perimeter with respect to the vertex positions
+    hijp1_m_hij = hnext - hi
+    hij_m_hijm1 = hi - hprev
+    hijp1_m_hij_length = sqrt(hijp1_m_hij[1]^2 + hijp1_m_hij[2]^2)
+    hij_m_hijm1_length = sqrt(hij_m_hijm1[1]^2 + hij_m_hijm1[2]^2)
+
+    dPi_dhij = hij_m_hijm1/hij_m_hijm1_length - hijp1_m_hij/hijp1_m_hij_length
+    dPi_dhijx = dPi_dhij[1]
+    dPi_dhijy = dPi_dhij[2]
+    return dPi_dhijx, dPi_dhijy
+end
+
+
+
+
+
 """
     compute_forces_SPV!(parameters, arrays, output)
 
@@ -34,16 +78,18 @@ with respect to particle positions.
 - The mathematical details of the force calculation (derivatives of geometry) can be complex and are implemented within the loops.
 """
 function compute_forces_SPV!(parameters, arrays, output)
-    if verify_tessellation(parameters, arrays, output)
-        voronoi_tesselation!(parameters, arrays, output)
-    else
-        update_delauney_vertices!(parameters, arrays, output)
-    end
     N = parameters.N
     voronoi_neighbors = arrays.neighborlist.voronoi_neighbors
     voronoi_vertices = arrays.neighborlist.voronoi_vertices
     voronoi_vertices_per_particle = arrays.neighborlist.voronoi_vertex_positions_per_particle
     voronoi_indices = arrays.neighborlist.voronoi_vertex_indices
+
+    if !verify_tessellation(parameters, arrays, output)
+        voronoi_tesselation!(parameters, arrays, output)
+    else
+        update_voronoi_vertices!(parameters, arrays, output)
+    end
+
     update_perimeters!(parameters, arrays, output)
     update_areas!(parameters, arrays, output)
 
@@ -74,52 +120,44 @@ function compute_forces_SPV!(parameters, arrays, output)
         for j in eachindex(voronoi_indices[particle_i]) # loop over all h
             next = j % length(voronoi_vertices_per_particle[particle_i]) + 1
             prev = j == 1 ? length(voronoi_vertices_per_particle[particle_i]) : j - 1
-            
+
             h_i_j = voronoi_vertices_per_particle[particle_i][j]
             h_i_jp1 = voronoi_vertices_per_particle[particle_i][next]
             h_i_jm1 = voronoi_vertices_per_particle[particle_i][prev]
 
             # compute the distance between h_i_j and h_i_jp1
-            hijp1_m_hij = h_i_jp1 - h_i_j
-            hij_m_hijm1 = h_i_j - h_i_jm1
-            hijp1_m_hij_length = sqrt(hijp1_m_hij[1]^2 + hijp1_m_hij[2]^2)
-            hij_m_hijm1_length = sqrt(hij_m_hijm1[1]^2 + hij_m_hijm1[2]^2)
+            # hijp1_m_hij = h_i_jp1 - h_i_j
+            # hij_m_hijm1 = h_i_j - h_i_jm1
+            # hijp1_m_hij_length = sqrt(hijp1_m_hij[1]^2 + hijp1_m_hij[2]^2)
+            # hij_m_hijm1_length = sqrt(hij_m_hijm1[1]^2 + hij_m_hijm1[2]^2)
 
-            dAi_dhijx = (h_i_jp1[2] - h_i_jm1[2])/2
-            dAi_dhijy = (h_i_jm1[1] - h_i_jp1[1])/2
-            dPi_dhij = hij_m_hijm1/hij_m_hijm1_length + hijp1_m_hij/hijp1_m_hij_length
-            dPi_dhijx = dPi_dhij[1]
-            dPi_dhijy = dPi_dhij[2]
+            # dAi_dhijx = (h_i_jp1[2] - h_i_jm1[2])/2
+            # dAi_dhijy = (h_i_jm1[1] - h_i_jp1[1])/2
+            # dPi_dhij = hij_m_hijm1/hij_m_hijm1_length + hijp1_m_hij/hijp1_m_hij_length
+            # dPi_dhijx = dPi_dhij[1]
+            # dPi_dhijy = dPi_dhij[2]
+            dAi_dhijx, dAi_dhijy = dAi_dhij(h_i_j, h_i_jp1, h_i_jm1)
+            dPi_dhijx, dPi_dhijy = dPi_dhij(h_i_j, h_i_jp1, h_i_jm1)
 
-            i_a, i_b, i_c = arrays.neighborlist.cell_centers_that_share_a_vertex[j]
-
+            i_a, i_b, i_c = arrays.neighborlist.delaunay_facet_triplets[voronoi_indices[particle_i][j]]
             if i_a == particle_i
                 particle_l = i_b
                 particle_k = i_c
             elseif i_b == particle_i
                 particle_l = i_a
                 particle_k = i_c
-            else
+            elseif i_c == particle_i
                 particle_l = i_a
                 particle_k = i_b
+            else
+                error("Error: particle_i should be part of the triplet (particle_i, particle_l, particle_k) that shares the vertex h_i_j")
             end
 
             rl = positions_with_pbc[particle_l]
             rk = positions_with_pbc[particle_k]
             ri = positions_with_pbc[particle_i]
-            xi = ri[1]
-            yi = ri[2]
-            xl = rl[1]
-            yl = rl[2]
-            xk = rk[1]
-            yk = rk[2]
 
-            # from mathematica:
-            dhijx_dxi = -(((yk - yl)*(2*xi*(xl*(-yi + yk) + xk*(yi - yl)) + xk^2*(-yi + yl) + xi^2*(-yk + yl) + (yi - yk)*(xl^2 + yi*yk - (yi + yk)*yl + yl^2)))/ (2*(xl*(-yi + yk) + xk*(yi - yl) + xi*(-yk + yl))^2))
-            dhijx_dyi = ((yk - yl)*(xi^2*(xk - xl) + xk^2*xl + xl*(yi - yk)^2 - xk*(xl^2 + (yi - yl)^2) + xi*(-xk^2 + xl^2 + 2*yi*yk - yk^2 - 2*yi*yl + yl^2)))/ (2*(xl*(-yi + yk) + xk*(yi - yl) + xi*(-yk + yl))^2)
-            dhijy_dxi = -1/2*((xk - xl)*(xk^2*(yi - yl) + xi^2*(yk - yl) - (yi - yk)*(xl^2 + yi*yk - (yi + yk)*yl + yl^2) + 2*xi*(xl*(yi - yk) + xk*(-yi + yl))))/ (xl*(-yi + yk) + xk*(yi - yl) + xi*(-yk + yl))^2
-            dhijy_dyi = -1/2*((xk - xl)*(xi^2*(xk - xl) + xk^2*xl + xl*(yi - yk)^2 - xk*(xl^2 + (yi - yl)^2) + xi*(-xk^2 + xl^2 + 2*yi*yk - yk^2 - 2*yi*yl + yl^2)))/ (xl*(-yi + yk) + xk*(yi - yl) + xi*(-yk + yl))^2
-
+            dhijx_dxi, dhijy_dxi, dhijx_dyi, dhijy_dyi = circumcenter_derivative(ri, rk, rl)
 
             dAi_dxi += dAi_dhijx * dhijx_dxi + dAi_dhijy * dhijy_dxi
             dAi_dyi += dAi_dhijx * dhijx_dyi + dAi_dhijy * dhijy_dyi
@@ -130,6 +168,38 @@ function compute_forces_SPV!(parameters, arrays, output)
 
         dEi_dxi = dEi_dAi*dAi_dxi + dEi_dPi*dPi_dxi
         dEi_dyi = dEi_dAi*dAi_dyi + dEi_dPi*dPi_dyi
+
+        # we test dAi_dxi by comparing it to the finite difference approximation
+        # posi = arrays.positions[particle_i]
+        # posi_plus = posi + SVector(1e-6, 0.0)
+        # posi_minus = posi - SVector(1e-6, 0.0)
+
+        # arrays.positions[particle_i] = posi_plus
+        # voronoi_tesselation!(parameters, arrays, output)
+        # update_perimeters!(parameters, arrays, output)
+        # update_areas!(parameters, arrays, output)
+        # Ei_plus = compute_energy_i(particle_i, parameters, arrays, output)
+        # Ai_plus = compute_area_i(particle_i, parameters, arrays, output)   
+        # Pi_plus = compute_perimeter_i(particle_i, parameters, arrays, output)
+        # arrays.positions[particle_i] = posi_minus
+        # voronoi_tesselation!(parameters, arrays, output)
+        # update_perimeters!(parameters, arrays, output)
+        # update_areas!(parameters, arrays, output)
+        # Ei_minus = compute_energy_i(particle_i, parameters, arrays, output)
+        # Ai_minus = compute_area_i(particle_i, parameters, arrays, output)
+        # Pi_minus = compute_perimeter_i(particle_i, parameters, arrays, output)
+        # arrays.positions[particle_i] = posi  # restore original position
+        # voronoi_tesselation!(parameters, arrays, output)
+        # update_perimeters!(parameters, arrays, output)
+        # update_areas!(parameters, arrays, output)
+        # dEi_dxi_fd = (Ei_plus - Ei_minus)/(2*1e-6)
+        # dAi_dxi_fd = (Ai_plus - Ai_minus)/(2*1e-6)
+        # dPi_dxi_fd = (Pi_plus - Pi_minus)/(2*1e-6)
+        # @show dEi_dxi, dEi_dxi_fd 
+        # @show dAi_dxi, dAi_dxi_fd
+        # @show dPi_dxi, dPi_dxi_fd
+        
+
         # @show dEi_dxi, dEi_dyi
         Fx -= dEi_dxi
         Fy -= dEi_dyi
@@ -140,58 +210,101 @@ function compute_forces_SPV!(parameters, arrays, output)
             dEj_dAj = 2 * K_A[originalj] * (areas[originalj] - target_areas[originalj])
             dEj_dPj = 2 * K_P[originalj] * (perimeters[originalj] - target_perimeters[originalj])
 
-
-            #find the two common vertices h and g that occur both in the voronoi_vertices of i and of j
+            # h is the first common vertex, g is the second common vertex by counterclockwise order around j
+            # the positions h and g depend on the positions of the particles i, j, h, and g
+            # find the two common vertices h and g that occur both in the voronoi_vertices of i and of j
             Nfound = 0
-            # for vertex_k in voronoi_indices[particle_j]
-            #     if vertex_k in voronoi_indices[particle_i]
-            #         Nfound += 1
-            #         common_vertices[Nfound] = vertex_k                    
-            #     end
-            # end
-            # if Nfound != 2
-            #     error("Error: neighborlist does not contain two common voronoi vertices")
-            # end
+            for vertex_k in voronoi_indices[particle_j]
+                if vertex_k in voronoi_indices[particle_i]
+                    Nfound += 1
+                    common_vertices[Nfound] = vertex_k                    
+                end
+            end
+            if Nfound != 2
+                error("Error: neighborlist does not contain two common voronoi vertices")
+            end
 
-            # h = voronoi_vertices[common_vertices[1]]
-            # g = voronoi_vertices[common_vertices[2]]
+            h = voronoi_vertices[common_vertices[1]]
+            g = voronoi_vertices[common_vertices[2]]
 
-            # # h is the first common vertex, g is the second common vertex by counterclockwise order around j
+            dist_h_min_g = sqrt(norm2(h - g))
 
-            # dAj_dhx = 0.0
-            # dAj_dhy = 0.0
-            # dAj_dgx = 0.0
-            # dAj_dgy = 0.0
-            # dPj_dhx = 0.0
-            # dPj_dhy = 0.0
-            # dPj_dgx = 0.0
-            # dPj_dgy = 0.0
+            hx, hy = h
+            gx, gy = g
 
-            # dhx_dxi = 0.0
-            # dhx_dyi = 0.0
-            # dhy_dxi = 0.0
-            # dhy_dyi = 0.0
-            # dgx_dxi = 0.0
-            # dgx_dyi = 0.0
-            # dgy_dxi = 0.0
-            # dgy_dyi = 0.0
+            dAj_dhx = gy/2
+            dAj_dhy = -gx/2
+            dAj_dgx = -hy/2
+            dAj_dgy = hx/2
+            dPj_dhx = (hx-gx)/dist_h_min_g
+            dPj_dhy = (hy-gy)/dist_h_min_g
+            dPj_dgx = -(hx-gx)/dist_h_min_g
+            dPj_dgy = -(hy-gy)/dist_h_min_g
+
+
+            h_triplet = arrays.neighborlist.delaunay_facet_triplets[common_vertices[1]]
+            g_triplet = arrays.neighborlist.delaunay_facet_triplets[common_vertices[2]]
+
+            # the triplets are (particle_i, particle_j, particle_m) and (particle_i, particle_j, particle_n) where particle_m and particle_n are the two particles that share the common vertex with particle_i and particle_j
+            particle_m = findfirst(x -> x != particle_i && x != particle_j, h_triplet) 
+            particle_n = findfirst(x -> x != particle_i && x != particle_j, g_triplet)
+            if particle_m === nothing || particle_n === nothing
+                error("Error: could not find the two particles that share the common vertex with particle_i and particle_j")
+            end
+            particle_m = h_triplet[particle_m]
+            particle_n = g_triplet[particle_n]
+
+            # compute the derivatives of h and g with respect to the position of particle_i            
+
+            dhx_dxi, dhy_dxi, dhx_dyi, dhy_dyi = circumcenter_derivative(positions_with_pbc[particle_i], positions_with_pbc[particle_j], positions_with_pbc[particle_m])
+
+            dgx_dxi, dgy_dxi, dgx_dyi, dgy_dyi = circumcenter_derivative(positions_with_pbc[particle_i], positions_with_pbc[particle_j], positions_with_pbc[particle_n])
+
             
-            # dAj_dxi = dAj_dhx*dhx_dxi + dAj_dhy*dhy_dxi + 
-            #           dAj_dgx*dgx_dxi + dAj_dgy*dgy_dxi
-            # dAj_dyi = dAj_dhx*dhx_dyi + dAj_dhy*dhy_dyi + 
-            #           dAj_dgx*dgx_dyi + dAj_dgy*dgy_dyi
-            # dPj_dxi = dPj_dhx*dhx_dxi + dPj_dhy*dhy_dxi + 
-            #           dPj_dgx*dgx_dxi + dPj_dgy*dgy_dxi
-            # dPj_dyi = dPj_dhx*dhx_dyi + dPj_dhy*dhy_dyi + 
-            #           dPj_dgx*dgx_dyi + dPj_dgy*dgy_dyi
-            
+            dAj_dxi = dAj_dhx*dhx_dxi + dAj_dhy*dhy_dxi + 
+                      dAj_dgx*dgx_dxi + dAj_dgy*dgy_dxi
+            dAj_dyi = dAj_dhx*dhx_dyi + dAj_dhy*dhy_dyi + 
+                      dAj_dgx*dgx_dyi + dAj_dgy*dgy_dyi
+            dPj_dxi = dPj_dhx*dhx_dxi + dPj_dhy*dhy_dxi + 
+                      dPj_dgx*dgx_dxi + dPj_dgy*dgy_dxi
+            dPj_dyi = dPj_dhx*dhx_dyi + dPj_dhy*dhy_dyi + 
+                      dPj_dgx*dgx_dyi + dPj_dgy*dgy_dyi
+        
 
+            dEj_dxi = dEj_dAj*dAj_dxi + dEj_dPj*dPj_dxi
+            dEj_dyi = dEj_dAj*dAj_dyi + dEj_dPj*dPj_dyi
 
-            # dEj_dxi = dEj_dAj*dAj_dxi + dEj_dPj*dPj_dxi
-            # dEj_dyi = dEj_dAj*dAj_dyi + dEj_dPj*dPj_dyi
+            Fx -= dEj_dxi
+            Fy -= dEj_dyi
 
-            # Fx -= dEj_dxi
-            # Fy -= dEj_dyi
+            # test dEj_dxi by comparing it to the finite difference approximation
+            posi = arrays.positions[originalj]
+            posi_plus = posi + SVector(1e-6, 0.0)
+            posi_minus = posi - SVector(1e-6, 0.0)
+            arrays.positions[originalj] = posi_plus
+            voronoi_tesselation!(parameters, arrays, output)
+            update_perimeters!(parameters, arrays, output)
+            update_areas!(parameters, arrays, output)
+            Ej_plus = compute_energy_i(originalj, parameters, arrays, output)
+            Aj_plus = compute_area_i(originalj, parameters, arrays, output)
+            Pj_plus = compute_perimeter_i(originalj, parameters, arrays, output)
+            arrays.positions[originalj] = posi_minus
+            voronoi_tesselation!(parameters, arrays, output)
+            update_perimeters!(parameters, arrays, output)
+            update_areas!(parameters, arrays, output)
+            Ej_minus = compute_energy_i(originalj, parameters, arrays, output)
+            Aj_minus = compute_area_i(originalj, parameters, arrays, output)
+            Pj_minus = compute_perimeter_i(originalj, parameters, arrays, output)
+            arrays.positions[originalj] = posi  # restore original position
+            voronoi_tesselation!(parameters, arrays, output)
+            update_perimeters!(parameters, arrays, output)
+            update_areas!(parameters, arrays, output)
+            dEj_dxi_fd = (Ej_plus - Ej_minus)/(2*1e-6)
+            dAj_dxi_fd = (Aj_plus - Aj_minus)/(2*1e-6)
+            dPj_dxi_fd = (Pj_plus - Pj_minus)/(2*1e-6)
+            @show dEj_dxi, dEj_dxi_fd
+            @show dAj_dxi, dAj_dxi_fd
+            @show dPj_dxi, dPj_dxi_fd
             
         end 
 
@@ -199,7 +312,6 @@ function compute_forces_SPV!(parameters, arrays, output)
         arrays.forces[particle_i] = Fi
 
     end
-    # error()
     return
 end
 

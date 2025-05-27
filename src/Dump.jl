@@ -53,6 +53,21 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
     current_step_str = string(output.steps_done)
     file_exists = isfile(filename)
 
+    if output.steps_done == 0 && file_exists
+        println("File $filename already exists!!! Adapting filename to avoid overwriting.")
+        base_name, ext = splitext(filename)
+        folder = dirname(base_name)
+        #add number of files in folder to base_name
+        file_count = length(readdir(folder))
+        filename = base_name * "_" * string(file_count) * ext
+        dump_info.filename = filename
+        println("New filename: $filename")
+        file_exists = isfile(filename)  # Reset flag since we have a new filename
+        if file_exists
+            error("This makes no sense! file an issue")
+        end
+    end
+
 
     if endswith(filename, ".h5") || endswith(filename, ".hdf5")
         if !file_exists

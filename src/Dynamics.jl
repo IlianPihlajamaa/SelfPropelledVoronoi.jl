@@ -169,6 +169,7 @@ function do_time_step_Euler_Heun!(parameters, arrays, output)
     # compute forces
     compute_forces_SPV!(parameters, arrays, output)
 
+    
     # update orientations
     for particle in 1:parameters.N
         old_orientation = orientations[particle]
@@ -218,6 +219,12 @@ function do_time_step_Euler_Heun!(parameters, arrays, output)
 
     old_positions .= positions
     old_orientations .= orientations
+
+    if !verify_tessellation(parameters, arrays, output)
+        voronoi_tesselation!(parameters, arrays, output)
+    else
+        update_voronoi_vertices!(parameters, arrays, output)
+    end
 
     return
 end

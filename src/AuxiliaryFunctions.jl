@@ -57,23 +57,8 @@ connecting its Voronoi vertices in sequence. The results are stored in `arrays.p
 - The `arrays.perimeters` vector is updated in-place with the new perimeter values.
 """
 function update_perimeters!(parameters, arrays, output)
-    voronoi_vertex_positions_per_particle = arrays.neighborlist.voronoi_vertex_positions_per_particle
-    for particle_i in 1:parameters.N
-        vor_positions = voronoi_vertex_positions_per_particle[particle_i]
-        # compute the perimeter of the voronoi cell
-        perimeter = 0.0
-        for j in 1:length(vor_positions)
-            posj = vor_positions[j]
-            l = j+1
-            if l > length(vor_positions)
-                l = 1
-            end
-            posl = vor_positions[l]
-            # compute the distance between posj and posl
-            dr = posl - posj
-            perimeter += sqrt(sum(dr.*dr))
-        end
-        arrays.perimeters[particle_i] = perimeter
+    for i in 1:parameters.N
+        arrays.perimeters[i] = compute_perimeter_i(i, parameters, arrays, output)
     end
 end
 
@@ -94,21 +79,9 @@ based on the coordinates of its Voronoi vertices. The results are stored in `arr
 - The `arrays.areas` vector is updated in-place with the new area values. The shoelace formula calculates signed area, so the division by 2.0 yields the geometric area assuming a consistent vertex ordering.
 """
 function update_areas!(parameters, arrays, output)
-    voronoi_vertex_positions_per_particle = arrays.neighborlist.voronoi_vertex_positions_per_particle
-    for particle_i in 1:parameters.N
-        vor_positions = voronoi_vertex_positions_per_particle[particle_i]
-        # compute the area of the voronoi cell
-        area = 0.0
-        for j in 1:length(vor_positions)
-            posj = vor_positions[j]
-            l = j+1
-            if l > length(vor_positions)
-                l = 1
-            end
-            posl = vor_positions[l]
-            area += (posj[1]*posl[2] - posl[1]*posj[2])
-        end
-        arrays.areas[particle_i] = area / 2.0
+    for i in 1:parameters.N
+        area_i = compute_area_i(i, parameters, arrays, output)
+        arrays.areas[i] = area_i
     end
 end
 
@@ -133,17 +106,77 @@ the current areas and perimeters in `arrays` are up-to-date before calculating t
 """
 function compute_energy(parameters, arrays, output)
     N = parameters.N
-    areas = arrays.areas
     update_areas!(parameters, arrays, output)
     update_perimeters!(parameters, arrays, output)
+    E = 0.0
+    for i in 1:N
+        E += compute_energy_i(i, parameters, arrays, output)
+    end
+    return E
+end
+
+
+"""    
+    compute_energy_i(i, parameters, arrays, output)
+
+Computes the potential energy contribution of a single Voronoi cell indexed by `i`.
+This function calculates the energy based on the deviation of the cell's area and perimeter
+from their target values, penalized by the corresponding spring constants.
+# Arguments
+- `i::Int`: The index of the Voronoi cell for which to compute the energy.
+- `parameters::ParameterStruct`: The main simulation parameter struct. Used to access target areas, target perimeters, and spring constants.
+- `arrays::ArrayStruct`: The struct holding simulation arrays. Used to access the current areas and perimeters of the Voronoi cells.
+- `output::Output`: The simulation output struct. Not directly used in this function but included for consistency in function signatures across the module.
+
+# Returns
+- `E::Float64`: The computed energy for the Voronoi cell indexed by `i`. This is calculated as:
+K_A[i] * (areas[i] - target_areas[i])^2 + K_P[i] * (perimeters[i] - target_perimeters[i])^2
+""" 
+function compute_energy_i(i, parameters, arrays, output)
+    areas = arrays.areas
     perimeters = arrays.perimeters
     target_perimeters = parameters.particles.target_perimeters
     target_areas = parameters.particles.target_areas
     K_P = parameters.particles.K_P
     K_A = parameters.particles.K_A
-    E = 0.0
-    for i in 1:N
-        E += K_A[i]*(areas[i] - target_areas[i])^2 + K_P[i]*(perimeters[i] - target_perimeters[i])^2
-    end
+    E = K_A[i]*(areas[i] - target_areas[i])^2 + K_P[i]*(perimeters[i] - target_perimeters[i])^2
     return E
+end
+
+
+function compute_area_i(i, parameters, arrays, output)
+    vor_positions = arrays.neighborlist.voronoi_vertex_positions_per_particle[i]
+    # compute the area of the voronoi cell
+    area = 0.0
+    for j in eachindex(vor_positions)
+        posj = vor_positions[j]
+        l = j+1
+        if l > length(vor_positions)
+            l = 1
+        end
+        posl = vor_positions[l]
+        area += (posj[1]*posl[2] - posl[1]*posj[2])
+    end
+
+    return area
+end
+
+
+function compute_perimeter_i(i, parameters, arrays, output)
+    vor_positions = arrays.neighborlist.voronoi_vertex_positions_per_particle[i]
+    # compute the perimeter of the voronoi cell
+    perimeter = 0.0
+    for j in eachindex(vor_positions)
+        posj = vor_positions[j]
+        l = j+1
+        if l > length(vor_positions)
+            l = 1
+        end
+        posl = vor_positions[l]
+        # compute the distance between posj and posl
+        dr = posl - posj
+        perimeter += sqrt(sum(dr.*dr))
+    end
+
+    return perimeter
 end
