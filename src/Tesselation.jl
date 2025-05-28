@@ -324,8 +324,8 @@ function verify_tessellation(parameters, arrays, output)
     # println("hashes match, verifying tessellation...")
 
     # Iterate through each pre-computed Delaunay facet triplet
-    for (voronoi_index, particle_triplet_indices) in enumerate(arrays.neighborlist.delaunay_facet_triplets)
-        p1_idx, p2_idx, p3_idx = particle_triplet_indices
+    for triplet in arrays.neighborlist.delaunay_facet_triplets
+        p1_idx, p2_idx, p3_idx = triplet
 
         # We only check triplets if at least one of the particles is part of the original set
         if !(p1_idx in 1:parameters.N || p2_idx in 1:parameters.N || p3_idx in 1:parameters.N)
@@ -342,29 +342,36 @@ function verify_tessellation(parameters, arrays, output)
         R_sq = norm2(pos1 - C) # Radius squared from first point of triplet to center
 
 
-        for particle_idx in particle_triplet_indices
-            for voronoi_j in arrays.neighborlist.voronoi_vertex_indices[particle_idx]
-                if voronoi_index == voronoi_j
-                    continue # Skip if the vertex is the one we are checking against
+        # no other particle should be inside the circumcircle of this triplet
+        # Iterate through all particles in the neighbor lists of the three particles
+        # we check only particles that are in the original set (1:N)
+
+        for particle_i in triplet 
+            if particle_i > parameters.N
+                continue # Skip particles that are not part of the original set
+            end
+
+            # check all the neighbors of the triplet particle 
+            for particle in arrays.neighborlist.voronoi_neighbors[particle_i]
+
+                # Skip the particles that are part of the triplet itself
+                if particle == p1_idx || particle == p2_idx || particle == p3_idx
+                    continue
                 end
 
-                # Fetch the position of the voronoi vertex j
-                p_voronoi = arrays.neighborlist.voronoi_vertices[voronoi_j]
-                # Calculate squared distance to circumcenter
-                d_sq = norm2(p_voronoi - C)
-                # Check for Delaunay violation
-                if d_sq < R_sq - epsilon
-                    # println("Delaunay violation found for particle indices: ", particle_triplet_indices)
-                    # println("Circumcenter: ", C)
-                    # println("Circumradius squared: ", R_sq)
-                    # println("Particle position: ", p_voronoi)
-                    # triplet_positions = [pos1, pos2, pos3]
-                    # println("Triplet positions: ", triplet_positions)
-                    # A violation is found, return false
+                # Get the position of the neighbor particle
+                pos_particle = arrays.neighborlist.positions_with_pbc[particle]
+
+                # Calculate the squared distance from the circumcenter to this particle
+                dist_sq = norm2(pos_particle - C)
+
+                # Check if this particle is inside the circumcircle
+                if dist_sq < R_sq - epsilon
+                    # If it is, we have a violation of the tessellation
                     return false
                 end
-      
             end
+
         end
     end
     update_voronoi_vertices!(parameters, arrays, output, arrays.neighborlist.delaunay_facet_triplets)
