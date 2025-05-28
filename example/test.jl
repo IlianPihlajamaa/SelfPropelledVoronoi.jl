@@ -39,7 +39,7 @@ frictionconstant = 1.0
 random_seed = 564574564
 Random.seed!(random_seed)
 dump_info = DumpInfo(
-    save=true,
+    save=false,
     filename="Data/dump_$(random_seed).h5",
     when_to_save_array=0:1000:1000000,
 )
@@ -129,7 +129,7 @@ function visualize(parameters, arrays, output)
     ], color=:black, linewidth=4)
 
     ax2 = Axis(fig[1, 2], title="energy", ylabel="energy")
-    lines!(ax2, dt*(100:length(energy_list)), energy_list[100:end], color=:blue)
+    lines!(ax2, dt*(1:length(energy_list)), energy_list, color=:blue)
 
 
     ax4 = Axis(fig[2, 2], title="msd", ylabel="msd", xlabel="t", yscale=log10, xscale=log10)
@@ -157,10 +157,15 @@ arrays.orientations .= 2π*rand(Float64, N)
 
 # Create an Output object
 output = Output()
-
+arrays.neighborlist.check_tesselation = true
 # Run the simulation
-Nsteps = 5000
-run_simulation!(parameter_struct, arrays, output, Nsteps)
+Nsteps = 1000
+@time run_simulation!(parameter_struct, arrays, output, Nsteps)
+
+@profview run_simulation!(parameter_struct, arrays, output, 1000)
+@profview run_simulation!(parameter_struct, arrays, output, 1000)
+
+
 previous_positions .= arrays.positions
 parameter_struct2 = ParameterStruct(N = N, dt = dt, 
     kBT = kBT, frictionconstant = frictionconstant, 

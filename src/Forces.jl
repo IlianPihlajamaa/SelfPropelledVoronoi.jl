@@ -84,10 +84,8 @@ function compute_forces_SPV!(parameters, arrays, output)
     voronoi_vertices_per_particle = arrays.neighborlist.voronoi_vertex_positions_per_particle
     voronoi_indices = arrays.neighborlist.voronoi_vertex_indices
 
-    if !verify_tessellation(parameters, arrays, output)
+    if verify_tessellation(parameters, arrays, output) == false
         voronoi_tesselation!(parameters, arrays, output)
-    else
-        update_voronoi_vertices!(parameters, arrays, output)
     end
 
     update_perimeters!(parameters, arrays, output)

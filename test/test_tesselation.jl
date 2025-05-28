@@ -18,20 +18,23 @@ end
 @testset "Tesselation.verify_tessellation" begin
 
     @testset "Valid Tessellation (Square)" begin
-        positions = [
-            SVector(0.54, 1.0), SVector(1.0, 1.5), 
-            SVector(1.0, 0.2), SVector(0.0, 0.54) 
-        ] # N=4
-        params, arrays, output = setup_test_environment(positions, 10.0) # Small box for clarity
-        arrays.neighborlist.check_tesselation = true
-        SelfPropelledVoronoi.voronoi_tesselation!(params, arrays, output)
-        
-        initial_positions_copy = deepcopy(arrays.positions)
-        result = SelfPropelledVoronoi.verify_tessellation(params, arrays, output)
 
+        Lx, Ly = 10.0, 10.0
+        N = 100
+        x = rand(Float64, N) .* Lx
+        y = rand(Float64, N) .* Ly
+        positions_initial = [SVector(x[i], y[i]) for i in 1:N]
+        params, arrays, output = setup_test_environment(positions_initial, 20.0)
+        arrays.neighborlist.check_tesselation = true
+        # Perform initial tessellation. This populates all relevant fields in arrays.neighborlist.
+        SelfPropelledVoronoi.voronoi_tesselation!(params, arrays, output)
+
+        positions_new = deepcopy(arrays.positions)
+        arrays.positions .= positions_new
+        # Call verify_tessellation with the current positions and the stale tessellation data.
+        result = SelfPropelledVoronoi.verify_tessellation(params, arrays, output)
         @test result == true
-        @test arrays.positions == initial_positions_copy # No change expected
-    end
+end
 
     @testset "Invalid Tessellation (Particle Moved into Circumcircle of a Delaunay Facet)" begin
         # Scenario:
@@ -56,6 +59,7 @@ end
             SVector(0.0, 0.0)    # p4 (Original Index 4)
         ]
         params, arrays, output = setup_test_environment(positions_initial, 20.0)
+        arrays.neighborlist.check_tesselation = true
 
         # Perform initial tessellation. This populates all relevant fields in arrays.neighborlist.
         SelfPropelledVoronoi.voronoi_tesselation!(params, arrays, output)

@@ -62,6 +62,7 @@ mutable struct VoronoiNeighborList
     voronoi_vertices::Vector{SVector{2,Float64}}                   # List of voronoi_vertices
     positions_with_pbc::Vector{SVector{2, Float64}}               # List of positions with periodic boundary conditions
     position_indices::Vector{Int64}                               # List of indices for the positions with periodic boundary conditions
+    position_pbc_images::Vector{Tuple{Int, Int}}                     # List of periodic boundary condition images for the positions
     delaunay_facet_triplets::Vector{NTuple{3, Int}}               # Stores original particle indices forming Delaunay facets
     check_tesselation::Bool # Flag which controls whether tesselation is checked or if tesselation is performed every time step regardless of its validity. For debugging. Set to true for performance.
     VoronoiNeighborList(N) = new(
@@ -71,8 +72,9 @@ mutable struct VoronoiNeighborList
         SVector{2, Float64}[],        
         SVector{2, Float64}[],
         Int64[],
+        Tuple{Int, Int}[],
         NTuple{3, Int}[], # Initialize delaunay_facet_triplets
-        false
+        true
     )
 end
 

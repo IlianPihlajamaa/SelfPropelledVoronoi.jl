@@ -220,12 +220,7 @@ function do_time_step_Euler_Heun!(parameters, arrays, output)
     old_positions .= positions
     old_orientations .= orientations
 
-    if !verify_tessellation(parameters, arrays, output)
-        voronoi_tesselation!(parameters, arrays, output)
-    else
-        update_voronoi_vertices!(parameters, arrays, output)
-    end
-
+   
     return
 end
 
