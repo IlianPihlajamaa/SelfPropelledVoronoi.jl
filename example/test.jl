@@ -1,8 +1,10 @@
+# This file is for my personal testing and development of the SelfPropelledVoronoi.jl package.
+
 import Pkg; Pkg.activate("example")
 
 using Revise
 using SelfPropelledVoronoi, CairoMakie, StaticArrays, Random, ColorSchemes
-using Statistics
+using Statistics, BenchmarkTools
 
 
 N = 400
@@ -10,7 +12,7 @@ rho = 1.0
 L = sqrt(N/rho)
 Lx = L
 Ly = L
-dt = 0.01
+dt = 0.1
 
 pbc_layer_depth = 2.5
 
@@ -56,6 +58,9 @@ displacement_array = [SVector{2, Float64}(0.0, 0.0) for _ in 1:N]
 previous_positions = SVector{2, Float64}.(x0, y0)
 
 
+
+
+
 function compute_msd(displacement_array)
     msd = 0.0
     for i in eachindex(displacement_array)
@@ -92,13 +97,16 @@ function visualize(parameters, arrays, output)
         return
     end
 
+    if SelfPropelledVoronoi.verify_tessellation(parameters, arrays, output) == false
+        SelfPropelledVoronoi.voronoi_tesselation!(parameters, arrays, output)
+    end
 
     Lx, Ly = parameters.box.box_sizes
     # visualize the initial configuration
     fig = Figure(size=(1000,500))
     
 
-    ax1 = Axis(fig[1:2, 1], title="configuration", limits=(-pbc_layer_depth, Lx+pbc_layer_depth, -pbc_layer_depth, Ly+pbc_layer_depth))
+    ax1 = Axis(fig[1:2, 1], title="configuration at t = $(output.steps_done*parameters.dt)", limits=(-pbc_layer_depth, Lx+pbc_layer_depth, -pbc_layer_depth, Ly+pbc_layer_depth))
 
     # # draw the voronoi cells
     scatter!(ax1, arrays.neighborlist.positions_with_pbc, markersize=12, color =:blue)
@@ -157,14 +165,12 @@ arrays.orientations .= 2π*rand(Float64, N)
 
 # Create an Output object
 output = Output()
-arrays.neighborlist.check_tesselation = true
+arrays.neighborlist.check_tesselation = false
 # Run the simulation
-Nsteps = 1000
+
+Nsteps = 1000 ÷ dt
+run_simulation!(parameter_struct, arrays, output, Nsteps)
 @time run_simulation!(parameter_struct, arrays, output, Nsteps)
-
-@profview run_simulation!(parameter_struct, arrays, output, 1000)
-@profview run_simulation!(parameter_struct, arrays, output, 1000)
-
 
 previous_positions .= arrays.positions
 parameter_struct2 = ParameterStruct(N = N, dt = dt, 
@@ -172,5 +178,5 @@ parameter_struct2 = ParameterStruct(N = N, dt = dt,
     periodic_boundary_layer_depth = pbc_layer_depth, verbose = verbose, box = box, particles= voronoi_cells,
     dump_info = dump_info, callback = visualize, RNG = rng)
 
-Nsteps = 100000
+Nsteps = 10000 ÷ dt
 run_simulation!(parameter_struct2, arrays, output, Nsteps)

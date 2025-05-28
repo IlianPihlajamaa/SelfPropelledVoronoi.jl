@@ -176,7 +176,7 @@ The process involves:
 - It relies on `Quickhull.jl` for the Delaunay triangulation and helper functions like `update_positions_with_pbcs!`, `circumcenter`, and `sort_indices_counter_clockwise`.
 """
 function voronoi_tesselation!(parameters, arrays, output)
-
+    # println("Computing Voronoi tessellation... at step ", output.steps_done)
     update_positions_with_pbcs!(parameters, arrays, output)
     tri = Quickhull.delaunay(arrays.neighborlist.positions_with_pbc)
     delauney_facets = Quickhull.facets(tri)
@@ -318,11 +318,19 @@ function verify_tessellation(parameters, arrays, output)
     
     if images_hash != hash(arrays.neighborlist.position_pbc_images) || indices_hash != hash(arrays.neighborlist.position_indices)
         # new ghost particles may have been added, so we need to recompute the tessellation
+
         return false
     end
+    # println("hashes match, verifying tessellation...")
+
     # Iterate through each pre-computed Delaunay facet triplet
-    for triplet_indices in arrays.neighborlist.delaunay_facet_triplets
-        p1_idx, p2_idx, p3_idx = triplet_indices
+    for (voronoi_index, particle_triplet_indices) in enumerate(arrays.neighborlist.delaunay_facet_triplets)
+        p1_idx, p2_idx, p3_idx = particle_triplet_indices
+
+        # We only check triplets if at least one of the particles is part of the original set
+        if !(p1_idx in 1:parameters.N || p2_idx in 1:parameters.N || p3_idx in 1:parameters.N)
+            continue # Skip triplets that do not involve original particles
+        end
 
         # Fetch positions directly from arrays.positions using original indices
         pos1 = arrays.neighborlist.positions_with_pbc[p1_idx]
@@ -333,25 +341,29 @@ function verify_tessellation(parameters, arrays, output)
         C = circumcenter(pos1, pos2, pos3)
         R_sq = norm2(pos1 - C) # Radius squared from first point of triplet to center
 
-        for particle_idx_in_triplet in triplet_indices
-            # only consider particles that are within the original particle count
-            # This ensures we only check particles that are part of the original set
-            if particle_idx_in_triplet <= parameters.N 
-                for neighbor_pbc_idx in arrays.neighborlist.voronoi_neighbors[particle_idx_in_triplet]
-                    if neighbor_pbc_idx in triplet_indices
-                        continue # Skip if the neighbor is one of the triplet vertices
-                    end
 
-                    # Fetch the position of the test particle
-                    p_test = arrays.neighborlist.positions_with_pbc[neighbor_pbc_idx]
-                    # Calculate squared distance to circumcenter
-                    d_sq = norm2(p_test - C)
-                    # Check for Delaunay violation
-                    if d_sq < R_sq - epsilon
-                        # A violation is found, return false
-                        return false
-                    end
+        for particle_idx in particle_triplet_indices
+            for voronoi_j in arrays.neighborlist.voronoi_vertex_indices[particle_idx]
+                if voronoi_index == voronoi_j
+                    continue # Skip if the vertex is the one we are checking against
                 end
+
+                # Fetch the position of the voronoi vertex j
+                p_voronoi = arrays.neighborlist.voronoi_vertices[voronoi_j]
+                # Calculate squared distance to circumcenter
+                d_sq = norm2(p_voronoi - C)
+                # Check for Delaunay violation
+                if d_sq < R_sq - epsilon
+                    # println("Delaunay violation found for particle indices: ", particle_triplet_indices)
+                    # println("Circumcenter: ", C)
+                    # println("Circumradius squared: ", R_sq)
+                    # println("Particle position: ", p_voronoi)
+                    # triplet_positions = [pos1, pos2, pos3]
+                    # println("Triplet positions: ", triplet_positions)
+                    # A violation is found, return false
+                    return false
+                end
+      
             end
         end
     end

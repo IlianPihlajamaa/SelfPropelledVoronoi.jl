@@ -180,3 +180,26 @@ function compute_perimeter_i(i, parameters, arrays, output)
 
     return perimeter
 end
+
+
+"""
+    compute_msd(displacement_array)
+
+returns [1,2,3,4,5,6,7,8,9,10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, etc]
+    Computes the mean squared displacement (MSD) of particles based on their displacement vectors.
+    The MSD is a measure of the average squared distance that particles have moved from their initial positions.
+"""
+function when_to_print_array(max_steps)
+    print_array = Int[]
+    step = 1
+    val = 0
+    while val <= max_steps
+        push!(print_array, val)
+        if val/step == 10
+            step *= 10
+        end 
+        val += step
+    end
+    return print_array
+end
+

@@ -1,4 +1,5 @@
 
+
 module SelfPropelledVoronoi
 import  Quickhull, Random, HDF5
 using SmallCollections: MutableSmallVector
@@ -27,5 +28,3 @@ export compute_pair_distance_vector
 
 
 end
-
-

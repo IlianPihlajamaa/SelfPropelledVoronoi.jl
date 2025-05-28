@@ -257,12 +257,12 @@ The main loop then proceeds as follows for each step:
 """
 function run_simulation!(parameters, arrays, output, N_steps)
     step = output.steps_done
-
+    start_step = step
     voronoi_tesselation!(parameters, arrays, output)
-
+    print_arr = when_to_print_array(N_steps + start_step + 10)
     # Main simulation loop
     while true
-        if parameters.verbose && step % (N_steps÷100) == 0
+        if parameters.verbose && step in print_arr
             println("Step: ", step)
         end
         # invoke callback
@@ -281,7 +281,7 @@ function run_simulation!(parameters, arrays, output, N_steps)
         # Check if the simulation should be stopped
         step = step + 1
         output.steps_done = step
-        if step >= N_steps
+        if step >= N_steps+start_step
             break
         end
     end
