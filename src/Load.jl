@@ -6,7 +6,6 @@ function load_simulation_state(filename::String)
         params_group = file["parameters"]
         N = read(params_group["N"])
         dt = read(params_group["dt"])
-        N_steps = read(params_group["N_steps"])
         kBT = read(params_group["kBT"])
         frictionconstant = read(params_group["frictionconstant"])
         periodic_boundary_layer_depth = read(params_group["periodic_boundary_layer_depth"])
@@ -33,7 +32,7 @@ function load_simulation_state(filename::String)
         callback = nothing
 
         parameter_struct = ParameterStruct(
-            N=N, dt=dt, N_steps=N_steps, kBT=kBT, frictionconstant=frictionconstant,
+            N=N, dt=dt, kBT=kBT, frictionconstant=frictionconstant,
             periodic_boundary_layer_depth=periodic_boundary_layer_depth, verbose=false, box=box,
             particles=particles, dump_info=dump_info, callback=callback, RNG=rng
         )

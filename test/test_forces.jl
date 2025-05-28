@@ -2,6 +2,8 @@ using SelfPropelledVoronoi
 using Test
 
 
+
+
 function test_circumcenter_derivative()
     r1 = SVector(rand(), rand())
     r2 = SVector(rand(), rand())

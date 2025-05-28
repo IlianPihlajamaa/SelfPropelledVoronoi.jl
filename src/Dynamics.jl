@@ -230,7 +230,7 @@ function do_time_step_Euler_Heun!(parameters, arrays, output)
 end
 
 """
-    run_simulation!(parameters, arrays, output)
+    run_simulation!(parameters, arrays, output, N_steps)
 
 Runs the main simulation loop for a specified number of time steps.
 
@@ -244,30 +244,30 @@ The main loop then proceeds as follows for each step:
 3.  **Time Step Advancement**: `do_time_step(parameters, arrays, output)` is called to advance the simulation state by one time step, updating particle positions, orientations, and forces.
 4.  **Data Dumping**: If `parameters.dump_info.save` is true, it checks if the current `step` is in `parameters.dump_info.when_to_save_array`. If so, `save_simulation_state!(parameters, arrays, output)` is called to save the current simulation state.
 5.  **Step Counting**: The local `step` counter is incremented, and `output.steps_done` is updated to reflect the completed step.
-6.  **Termination**: The loop breaks if `step` exceeds `parameters.N_steps`.
+6.  **Termination**: The loop breaks if `step` exceeds `N_steps`.
 
 # Arguments
 - `parameters::ParameterStruct`: The main simulation parameter struct. Key fields used:
-    - `N_steps::Int`: The total number of simulation steps to perform.
     - `verbose::Bool`: Flag to enable/disable verbose output.
     - `dump_info::DumpInfo`: Contains parameters for saving simulation data, including `save` (flag), `when_to_save_array` (steps for saving).
     - `callback`: A user-defined function called at each step.
 - `arrays::ArrayStruct`: The struct holding simulation arrays (positions, forces, orientations, etc.). This is modified in-place by the functions called within the loop (e.g., `do_time_step`, `voronoi_tesselation!`).
 - `output::Output`: The simulation output struct.
     - `output.steps_done`: Used to initialize the local `step` counter and is updated at each iteration. It is also passed to and modified by functions called within the loop.
+- `N_steps::Int`: The total number of time steps to run the simulation.
 
 # Notes
 - The `arrays` and `output` structs are modified in-place throughout the simulation by the various functions called.
 - The simulation starts from the step number indicated by `output.steps_done` at the beginning of the function call.
 """
-function run_simulation!(parameters, arrays, output)
+function run_simulation!(parameters, arrays, output, N_steps)
     step = output.steps_done
 
     voronoi_tesselation!(parameters, arrays, output)
 
     # Main simulation loop
     while true
-        if parameters.verbose && step % 100 == 0
+        if parameters.verbose && step % (N_steps÷100) == 0
             println("Step: ", step)
         end
         # invoke callback
@@ -286,7 +286,7 @@ function run_simulation!(parameters, arrays, output)
         # Check if the simulation should be stopped
         step = step + 1
         output.steps_done = step
-        if step >= parameters.N_steps
+        if step >= N_steps
             break
         end
     end

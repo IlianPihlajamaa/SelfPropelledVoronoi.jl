@@ -241,8 +241,8 @@ function voronoi_tesselation!(parameters, arrays, output)
         push!(arrays.neighborlist.voronoi_vertex_positions_per_particle[k], voronoi_vertex_position)
     end
 
-    for particle in 1:parameters.N
-        voronoi_center = arrays.positions[particle]
+    for particle in 1:N_pbc
+        voronoi_center = positions_with_pbc[particle]
         # sort the voronoi vertex indices counterclockwise
         voronoi_vertex_indices_new, voronoi_vertex_positions_per_particle_new = sort_indices_counter_clockwise(arrays.neighborlist.voronoi_vertex_indices[particle], arrays.neighborlist.voronoi_vertex_positions_per_particle[particle], arrays.neighborlist.voronoi_vertices, voronoi_center)
         # replace the voronoi vertex indices with the new ones

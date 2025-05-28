@@ -155,7 +155,7 @@ function compute_area_i(i, parameters, arrays, output)
             l = 1
         end
         posl = vor_positions[l]
-        area += (posj[1]*posl[2] - posl[1]*posj[2])
+        area += (posj[1]*posl[2] - posl[1]*posj[2])/2
     end
 
     return area

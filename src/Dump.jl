@@ -15,7 +15,6 @@ If the HDF5 file does not exist, it will be created, and initial simulation para
 will be saved under the `/parameters` group. These include:
 - `/parameters/N`: Number of particles
 - `/parameters/dt`: Timestep size
-- `/parameters/N_steps`: Total number of simulation steps
 - `/parameters/kBT`: Boltzmann temperature
 - `/parameters/frictionconstant`: Friction constant
 - `/parameters/box_sizes`: Dimensions of the simulation box (SVector)
@@ -76,7 +75,6 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
                 params_g = HDF5.create_group(file_handle, "parameters")
                 params_g["N"] = parameters.N
                 params_g["dt"] = parameters.dt
-                params_g["N_steps"] = parameters.N_steps
                 params_g["kBT"] = parameters.kBT
                 params_g["frictionconstant"] = parameters.frictionconstant
                 params_g["periodic_boundary_layer_depth"] = parameters.periodic_boundary_layer_depth

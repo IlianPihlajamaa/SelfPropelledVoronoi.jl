@@ -238,7 +238,6 @@ Type parameters:
 struct ParameterStruct{P<:Particles, CB}
     N::Int
     dt::Float64
-    N_steps::Int
     kBT::Float64
     frictionconstant::Float64
     periodic_boundary_layer_depth::Float64
@@ -251,7 +250,6 @@ struct ParameterStruct{P<:Particles, CB}
     function ParameterStruct(;
         N::Int=100,
         dt::Float64=0.01,
-        N_steps::Int=10000,
         kBT::Float64=1.0,
         frictionconstant::Float64=1.0,
         periodic_boundary_layer_depth::Float64=2.5,
@@ -272,7 +270,6 @@ struct ParameterStruct{P<:Particles, CB}
         return new{typeof(particles), typeof(callback)}(
             N,
             dt,
-            N_steps,
             kBT,
             frictionconstant,
             periodic_boundary_layer_depth,
