@@ -106,15 +106,15 @@ function visualize(parameters, arrays, output)
     fig = Figure(size=(1000,500))
     
 
-    ax1 = Axis(fig[1:2, 1], title="configuration at t = $(output.steps_done*parameters.dt)", limits=(-pbc_layer_depth, Lx+pbc_layer_depth, -pbc_layer_depth, Ly+pbc_layer_depth))
+    ax1 = Axis(fig[1:2, 1], title="configuration at t = $(output.steps_done*parameters.dt)", limits=(0, Lx, 0, Ly), xlabel="x", ylabel="y")
 
     # # draw the voronoi cells
-    scatter!(ax1, arrays.neighborlist.positions_with_pbc, markersize=12, color =:blue)
+    scatter!(ax1, arrays.positions, markersize=12, color =:blue)
 
 
     # draw voronoi edges
     linesegs2 = Tuple{SVector{2, Float64}, SVector{2, Float64}}[]
-    for particle_i in 1:length(arrays.neighborlist.positions_with_pbc)
+    for particle_i in 1:length(arrays.positions)
         indices = arrays.neighborlist.voronoi_vertex_indices[particle_i]
         vor_positions = arrays.neighborlist.voronoi_vertices[indices]
         for i in 1:length(indices)
