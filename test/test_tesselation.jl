@@ -36,7 +36,7 @@ end
         # Call verify_tessellation with the current positions and the stale tessellation data.
         result = SelfPropelledVoronoi.verify_tessellation(params, arrays, output)
         @test result == true
-end
+    end
 
     @testset "Invalid Tessellation (Particle Moved into Circumcircle of a Delaunay Facet)" begin
         # Scenario:
