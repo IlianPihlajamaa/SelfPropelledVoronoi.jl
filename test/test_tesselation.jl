@@ -19,11 +19,11 @@ end
 
     @testset "Valid Tessellation (Square)" begin
         positions = [
-            SVector(0.0, 1.0), SVector(1.0, 1.0), 
-            SVector(1.0, 0.0), SVector(0.0, 0.0) 
+            SVector(0.54, 1.0), SVector(1.0, 1.5), 
+            SVector(1.0, 0.2), SVector(0.0, 0.54) 
         ] # N=4
         params, arrays, output = setup_test_environment(positions, 10.0) # Small box for clarity
-
+        arrays.neighborlist.check_tesselation = true
         SelfPropelledVoronoi.voronoi_tesselation!(params, arrays, output)
         
         initial_positions_copy = deepcopy(arrays.positions)

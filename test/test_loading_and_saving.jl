@@ -29,7 +29,7 @@ function setup_test_objects(N_val=2, Lx_val=10.0, Ly_val=10.0;
     rng = Random.MersenneTwister(1234)
 
     params = ParameterStruct(
-        N=N_val, dt=0.01, N_steps=1000, kBT=1.0, frictionconstant=1.0,
+        N=N_val, dt=0.01, kBT=1.0, frictionconstant=1.0,
         box=box, particles=particles, dump_info=dump_info,
         callback=dummy_callback, RNG=rng
     )

@@ -254,7 +254,7 @@ using StaticArrays
     Random.seed!(random_seed)
     dump_info = DumpInfo(save=false)
     callback = (p,a,o) -> nothing
-    parameter_struct = ParameterStruct(N=N, dt=dt, N_steps=Nsteps, kBT=kBT, frictionconstant=frictionconstant, 
+    parameter_struct = ParameterStruct(N=N, dt=dt,kBT=kBT, frictionconstant=frictionconstant, 
                                         periodic_boundary_layer_depth=pbc_layer_depth, verbose=false, 
                                         box=box, particles=voronoi_cells, dump_info=dump_info, 
                                         callback=callback, RNG=MersenneTwister(random_seed))
@@ -341,7 +341,7 @@ end
     Random.seed!(random_seed)
     dump_info = DumpInfo(save=false)
     callback = (p,a,o) -> nothing
-    parameter_struct_gcm = ParameterStruct(N=N, dt=dt, N_steps=Nsteps, kBT=kBT, frictionconstant=frictionconstant, 
+    parameter_struct_gcm = ParameterStruct(N=N, dt=dt, kBT=kBT, frictionconstant=frictionconstant, 
                                             periodic_boundary_layer_depth=pbc_layer_depth, verbose=false, 
                                             box=box, particles=voronoi_cells, dump_info=dump_info, 
                                             callback=callback, RNG=MersenneTwister(random_seed))

@@ -5,8 +5,8 @@ using SelfPropelledVoronoi, CairoMakie, StaticArrays, Random, ColorSchemes
 using Statistics
 
 
-N = 50
-rho = 1.3
+N = 400
+rho = 1.0
 L = sqrt(N/rho)
 Lx = L
 Ly = L
@@ -18,11 +18,11 @@ pbc_layer_depth = 2.5
 # Create a box
 box = SimulationBox(Lx, Ly)
 # Create a VoronoiCells object
-target_perimeters = 3.9*ones(N)
+target_perimeters = 3.85*ones(N)
 target_areas = ones(N)
 K_P = ones(N)
 K_A = ones(N)
-active_force_strengths = ones(N)*0.0
+active_force_strengths = ones(N)*0.1
 D_r = ones(N)
 voronoi_cells = VoronoiCells(
     target_perimeters,
@@ -34,7 +34,7 @@ voronoi_cells = VoronoiCells(
 )
 
 # Create a ParameterStruct object
-kBT = 0.1
+kBT = 1.0
 frictionconstant = 1.0
 random_seed = 564574564
 Random.seed!(random_seed)
@@ -98,10 +98,10 @@ function visualize(parameters, arrays, output)
     fig = Figure(size=(1000,500))
     
 
-    ax1 = Axis(fig[1:2, 1], title="from neighborlist", limits=(-pbc_layer_depth, Lx+pbc_layer_depth, -pbc_layer_depth, Ly+pbc_layer_depth))
+    ax1 = Axis(fig[1:2, 1], title="configuration", limits=(-pbc_layer_depth, Lx+pbc_layer_depth, -pbc_layer_depth, Ly+pbc_layer_depth))
 
     # # draw the voronoi cells
-    scatter!(ax1, arrays.neighborlist.positions_with_pbc, markersize=15, color =:blue)
+    scatter!(ax1, arrays.neighborlist.positions_with_pbc, markersize=12, color =:blue)
 
 
     # draw voronoi edges
@@ -152,8 +152,6 @@ arrays = ArrayStruct(N)
 #put particles on cubic lattice
 
 arrays.positions .= SVector.(x0, y0)
-
-
 arrays.orientations .= 2π*rand(Float64, N) 
 
 
