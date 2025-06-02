@@ -1,5 +1,25 @@
 
+"""
+    create_visualization_callback(arrays, plot_frequency, dt, box)
 
+Creates a visualization callback for the simulation.
+The callback will visualize the simulation with the frequency set by the second argument, plotting the positions of the particles, the energy, and the mean squared displacement (MSD).
+
+The visualization will be displayed in a figure with two axes: one for the particle configuration and one for the energy and MSD.
+The first axis shows the particle positions and Voronoi edges, while the second axis shows the energy and MSD over time.
+
+# Arguments
+- `arrays`: The `ArrayStruct` containing the particle positions and orientations.
+- `plot_frequency`: The frequency at which to plot the visualization.
+- `dt`: The time step of the simulation.
+- `box`: The `SimulationBox` containing the box sizes for periodic boundary conditions.
+
+# Returns
+ - A callback function that takes `parameters`, `arrays`, and `output` as arguments and updates the visualization.
+
+# Notes
+- The printing is necessary to ensure that the visualization updates correctly during the simulation.
+"""
 function create_visualization_callback(arrays,  plot_frequency, dt, box)
     function compute_msd(displacement_array)
         msd = 0.0

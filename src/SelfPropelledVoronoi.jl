@@ -14,8 +14,7 @@ for file in [
     "Forces.jl",
     "Tesselation.jl",
     "Dynamics.jl", 
-
-    ] 
+    "Visualize.jl",    ] 
     
     include(file) 
 end
