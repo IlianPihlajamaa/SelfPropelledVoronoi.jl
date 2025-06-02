@@ -26,7 +26,7 @@ The behavior of particles in `SelfPropelledVoronoi.jl` is governed by a few key 
 
 By combining these elements, `SelfPropelledVoronoi.jl` provides a tool to explore how local interactions and active forces at the particle level give rise to complex, large-scale behaviors in 2D active systems. The reference to Bi et al. (Physical Review X 6.2 (2016): 021011) provides an introduction to this model.
 
-Specifically, it solves the following equations of motion for every particle
+Specifically, it solves the following equations of motion for every particle:
 
 $$d\mathbf{r} = \left(\frac{1}{\gamma} \mathbf{F}  + v_0 \hat{\mathbf{n}}\right)dt,$$
 
