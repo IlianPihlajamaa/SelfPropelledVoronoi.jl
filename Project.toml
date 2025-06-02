@@ -4,6 +4,7 @@ authors = ["IlianPihlajamaa <ilian.pihlajamaa@gmail.com> and contributors"]
 version = "1.0.0-DEV"
 
 [deps]
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 Quickhull = "baca2653-9c88-49d2-a488-12dbf25fc4fb"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -11,6 +12,7 @@ SmallCollections = "2b935e18-93d6-40ac-ae34-fe54c09f00e1"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
+GLMakie = "0.11.8"
 HDF5 = "0.17.2"
 Random = "1.10.0"
 SmallCollections = "0.4.0"
