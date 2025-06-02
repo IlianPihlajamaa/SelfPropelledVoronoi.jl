@@ -30,7 +30,7 @@ Specifically, it solves the following equations of motion for every particle
 
 $$d\mathbf{r} = \left(\frac{1}{\gamma} \mathbf{F}  + v_0 \hat{\mathbf{n}}\right)dt,$$
 
-in which $\mathbf{r}$ is the particle position, $\gamma$ is the friction constant, $\mathbf{F}$ is the potential force $\mathbf{F} = - \nabla H$, $v_0$ is the active velocity, and $\hat{\mathbf{n}}$ is the direction of the active force that is governed by the angle $\theta$:
+in which $\mathbf{r}$ is the particle position, $\gamma$ is the friction constant, $\mathbf{F}$ is the potential force $\mathbf{F} = - \nabla H$, $v_0$ is the active velocity, and $\hat{\mathbf{n}}$ is the direction of the active force that is governed by the angle $\theta$ which satisfies a stochastic differential equation:
 
 $$d\theta = \sqrt{2D_r}dW,$$
 
