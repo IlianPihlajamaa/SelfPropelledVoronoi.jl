@@ -16,6 +16,8 @@
 
 See Bi, Dapeng, et al. "Motility-driven glass and jamming transitions in biological tissues." Physical Review X 6.2 (2016): 021011.
 
+![](docs/src/SPVmodel.mp4)
+
 ## Installation
 
 Currently, `SelfPropelledVoronoi.jl` is not registered. To install it, run:

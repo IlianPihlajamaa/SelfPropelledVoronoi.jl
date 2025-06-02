@@ -39,6 +39,7 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
 
     # This function creates a callback that will be called during the simulation
     # It will visualize the simulation at each step
+    N = length(arrays.positions)
     energy_list = Observable(Float64[])
     mean_squared_displacement_list = Observable(Float64[])
     displacement_array = [SVector{2, Float64}(0.0, 0.0) for _ in 1:N]
@@ -109,7 +110,30 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
     ax2 = Axis(fig[1, 2], title="energy", ylabel="energy", xlabel="t", limits=@lift((0, $xmax_energy, $min_energy, $max_energy)))
     lines!(ax2, t_array, energy_list, color=:blue)
 
-    ax4 = Axis(fig[2, 2], title="msd", ylabel="msd", xlabel="t", yscale=log10, xscale=log10, limits=(dt, 1e5, 1e-6, 1e2))
+    tmin = dt
+    tmax = @lift(
+        if isempty($t_array)
+            2dt
+        else
+            maximum($t_array)
+        end
+    )
+    ymin = @lift(
+        if isempty($mean_squared_displacement_list)
+            1e-6
+        else
+            minimum($mean_squared_displacement_list)*0.9
+        end
+    )
+    ymax = @lift(
+        if isempty($mean_squared_displacement_list)
+            1e2
+        else
+            maximum($mean_squared_displacement_list)*1.1
+        end
+    )
+
+    ax4 = Axis(fig[2, 2], title="msd", ylabel="msd", xlabel="t", yscale=log10, xscale=log10, limits=@lift(($tmin, $tmax, $ymin, $ymax)))
     lines!(ax4, @lift($t_array[2:end]), mean_squared_displacement_list, color=:blue, label="msd")
     display(fig)
 

@@ -4,6 +4,7 @@ module SelfPropelledVoronoi
 import  Quickhull, Random, HDF5
 using SmallCollections: MutableSmallVector
 using StaticArrays: SVector
+using GLMakie: Axis, linesegments!, display, Figure, scatter!, @lift, Observable, lines!
 
 for file in [
     "DataStructs.jl", 

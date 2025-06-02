@@ -66,7 +66,7 @@ output = Output()
 arrays.neighborlist.check_tesselation = true
 # Run the simulation
 
-Nsteps = 100 ÷ dt
+Nsteps = 500 ÷ dt
 run_simulation!(parameter_struct, arrays, output, Nsteps)
 visualize = SelfPropelledVoronoi.create_visualization_callback(arrays, 25, dt, box)
 
