@@ -16,7 +16,7 @@
 
 See Bi, Dapeng, et al. "Motility-driven glass and jamming transitions in biological tissues." Physical Review X 6.2 (2016): 021011.
 
-![](docs/src/SPVmodel.mp4)
+https://github.com/IlianPihlajamaa/SelfPropelledVoronoi.jl/blob/master/docs/src/SPVmodel.mp4
 
 ## Installation
 
