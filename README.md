@@ -30,11 +30,9 @@ Pkg.add("https://github.com/IlianPihlajamaa/SelfPropelledVoronoi.jl")
 
 ## Basic Usage / Example
 
-The `example/test.jl` script provides a starting point for understanding how to set up and run a basic simulation. 
-
 Running the code typically consists of the following steps: initialize a small number of particles, define simulation parameters, and run the simulation for a set number of steps.
 
-Here's a conceptual example of how to use the main module and run a simulation:
+Below is a conceptual example of how to use the main module and run a simulation. See also the [Documentation](https://IlianPihlajamaa.github.io/SelfPropelledVoronoi.jl/dev).
 
 ```julia
 using SelfPropelledVoronoi
