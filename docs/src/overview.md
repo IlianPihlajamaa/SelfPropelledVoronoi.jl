@@ -38,4 +38,4 @@ in which $D_r$ is the rotational diffusion constant and $dW$ is a Wiener process
 
 $$H = \sum_i \left(K_{A,i}(A_i-A_{0,i})^2+K_{P,i}(P_i-P_{0,i})^2\right)$$
 
-where the parameters are explained above.
+of which the parameters are explained above.
