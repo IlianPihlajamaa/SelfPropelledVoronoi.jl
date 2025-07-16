@@ -464,6 +464,9 @@ naturally provides an ordering for CCW sorting.
 # function sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertices, voronoi_center)
 function sort_indices_counter_clockwise!(neighborlist, particle)
     N_vertices_particle = neighborlist.N_voronoi_vertices_pp[particle]
+    if N_vertices_particle == 0
+        return # nothing to sort
+    end
     voronoi_vertex_indices = @view neighborlist.voronoi_vertex_indices[particle][1:N_vertices_particle]
     voronoi_vertices = neighborlist.voronoi_vertices
     voronoi_center = neighborlist.positions_with_pbc[particle]
@@ -475,9 +478,13 @@ function sort_indices_counter_clockwise!(neighborlist, particle)
         resize!(angles, N_vertices_particle)
     end
 
-    for (i, voronoi_vertex_index) in enumerate(voronoi_vertex_indices)
-        dx = voronoi_vertices[voronoi_vertex_index][1] - voronoi_center[1]
-        dy = voronoi_vertices[voronoi_vertex_index][2] - voronoi_center[2]
+    voronoi_vertices_mat = reinterpret(reshape, Float64, voronoi_vertices)
+    vor_center_x = voronoi_center[1]
+    vor_center_y = voronoi_center[2]
+    @turbo for i in 1:N_vertices_particle
+        voronoi_vertex_index = voronoi_vertex_indices[i]
+        dx = voronoi_vertices_mat[1, voronoi_vertex_index] - vor_center_x
+        dy = voronoi_vertices_mat[2, voronoi_vertex_index] - vor_center_y
         angle = atan(dy, dx)
         angles[i] = angle
     end

@@ -4,6 +4,7 @@ module SelfPropelledVoronoi
 import  Quickhull, Random, HDF5
 using SmallCollections: MutableSmallVector
 using StaticArrays: SVector
+using LoopVectorization: @turbo
 
 for file in [
     "DataStructs.jl", 
