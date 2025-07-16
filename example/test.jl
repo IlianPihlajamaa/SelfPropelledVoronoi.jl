@@ -249,7 +249,7 @@ dump_info = DumpInfo(
 )
 
 rng = Random.MersenneTwister(random_seed)
-verbose=false
+verbose=true
 cb(x...) = nothing 
 parameter_struct = ParameterStruct(N = N, dt = dt, 
     kBT = kBT, frictionconstant = frictionconstant, 
@@ -271,17 +271,17 @@ output = Output()
 arrays.neighborlist.check_tesselation = true
 # Run the simulation
 
-Nsteps = 1 ÷ dt
+Nsteps = 1000 ÷ dt
 run_simulation!(parameter_struct, arrays, output, Nsteps)
-# visualize = create_visualization_callback(arrays, 25000, dt, box)
+visualize = create_visualization_callback(arrays, 25, dt, box)
 
 # with a visualization callback
 parameter_struct2 = ParameterStruct(N = N, dt = dt, 
     kBT = kBT, frictionconstant = frictionconstant, 
     periodic_boundary_layer_depth = pbc_layer_depth, verbose = verbose, box = box, particles= voronoi_cells,
-    dump_info = dump_info, callback = cb, RNG = rng)
+    dump_info = dump_info, callback = visualize, RNG = rng)
 
-Nsteps = 100 ÷ dt
+Nsteps = 10000 ÷ dt
 @profview @time  run_simulation!(parameter_struct2, arrays, output, Nsteps) # 4.54 - 4.73 seconds (35.37 M allocations: 2.616 GiB, 8.61% gc time)
 
 @show sum(arrays.positions) .- [4014.0155646974695, 4018.0113204639847]

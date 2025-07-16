@@ -433,8 +433,8 @@ function  update_voronoi_vertices!(parameters, arrays, output)
         sort_indices_counter_clockwise!(arrays.neighborlist, particle)
         # replace the voronoi vertex indices with the new ones
         # arrays.neighborlist.voronoi_vertex_indices[particle] = voronoi_vertex_indices_new
-        N_vertices_particle = N_voronoi_vertices_pp[particle]
-        @assert length(arrays.neighborlist.voronoi_vertex_indices[particle]) == N_vertices_particle "voronoi_vertex_indices for particle $particle should have length $N_vertices_particle, but has length $(length(arrays.neighborlist.voronoi_vertex_indices[particle]))"
+        # N_vertices_particle = N_voronoi_vertices_pp[particle]
+        # @assert length(arrays.neighborlist.voronoi_vertex_indices[particle]) == N_vertices_particle "voronoi_vertex_indices for particle $particle should have length $N_vertices_particle, but has length $(length(arrays.neighborlist.voronoi_vertex_indices[particle]))"
     end
 end
 

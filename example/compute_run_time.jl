@@ -211,7 +211,7 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
     return (parameters, arrays, output) -> visualize(parameters, arrays, output)
 end
 
-logN = 1:0.2:4.4
+logN = 1.6:0.2:4
 run_times = Float64[]
 for  Nappr = 10 .^ logN
     N = round(Int, Nappr)
@@ -244,7 +244,7 @@ for  Nappr = 10 .^ logN
     # Create a ParameterStruct object
     kBT = 1.0
     frictionconstant = 1.0
-    random_seed = 564574564
+    random_seed = 5435
     Random.seed!(random_seed)
     dump_info = DumpInfo(
         save=false,
@@ -280,10 +280,11 @@ for  Nappr = 10 .^ logN
     trun_per_step = trun / Nsteps
     push!(run_times, trun_per_step)
     println("Run time for N = $N: ", trun_per_step, " seconds per step")
+    @show output.N_voronoi_tesselations
 end
 
 fig = Figure(size=(600, 400))
-ax = Axis(fig[1, 1], title="Run time per step vs N", xlabel="N", ylabel="Run time (seconds per step)", xscale=log10, yscale=log10, limits=(30, 100000, 0.0001, 10))
+ax = Axis(fig[1, 1], title="Run time per step vs N", xlabel="N", ylabel="Run time (seconds per step)", xscale=log10, yscale=log10, limits=(60, 20000, 0.0001, 10))
 scatterlines!(ax, 10 .^ logN, run_times, color=:blue, label="My code")
 
 # extracted from paper
