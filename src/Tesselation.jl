@@ -74,76 +74,93 @@ function update_positions_with_pbcs!(parameters, arrays, output)
     # only considering a layer of particles with depth D_pbc
     N_particles = 0
 
-    positions_with_pbc = SVector{2, Float64}[]
-    pbc_position_indices = Int[]
+    positions_with_pbc = arrays.neighborlist.positions_with_pbc
+    pbc_position_indices = arrays.neighborlist.position_indices
     pbc_images = Tuple{Int, Int}[]
 
 
     # first N are the real particles
     for i in 1:N
         N_particles += 1
-        push!(positions_with_pbc, positions[i])
-        push!(pbc_position_indices, i)
+        # push!(positions_with_pbc, positions[i])
+        replace_or_push!(positions_with_pbc, positions[i], N_particles)
+        # push!(pbc_position_indices, i)
+        replace_or_push!(pbc_position_indices, i, N_particles)
         push!(pbc_images, (0, 0)) # store the original index for later reference
     end
-
     # now add the positions for the periodic boundary conditions
     for i in 1:N
         x, y = positions[i]
         if x < pbc_layer_depth
             N_particles += 1
-            push!(positions_with_pbc, SVector(x + Lx, y))
-            push!(pbc_position_indices, i)
+            # push!(positions_with_pbc, SVector(x + Lx, y))
+            replace_or_push!(positions_with_pbc, SVector(x + Lx, y), N_particles)
+            # push!(pbc_position_indices, i)
+            replace_or_push!(pbc_position_indices, i, N_particles)
             push!(pbc_images, (1, 0)) 
         end
         if x > Lx - pbc_layer_depth
             N_particles += 1
-            push!(positions_with_pbc, SVector(x - Lx, y))
-            push!(pbc_position_indices, i)
+            # push!(positions_with_pbc, SVector(x - Lx, y))
+            replace_or_push!(positions_with_pbc, SVector(x - Lx, y), N_particles)
+            # push!(pbc_position_indices, i)
+            replace_or_push!(pbc_position_indices, i, N_particles)
             push!(pbc_images, (-1, 0)) 
         end
         if y < pbc_layer_depth
             N_particles += 1
-            push!(positions_with_pbc, SVector(x, y + Ly))
-            push!(pbc_position_indices, i)
+            # push!(positions_with_pbc, SVector(x, y + Ly))
+            replace_or_push!(positions_with_pbc, SVector(x, y + Ly), N_particles)
+            # push!(pbc_position_indices, i)
+            replace_or_push!(pbc_position_indices, i, N_particles)
             push!(pbc_images, (0, 1)) 
         end
         if y > Ly - pbc_layer_depth
             N_particles += 1
-            push!(positions_with_pbc, SVector(x, y - Ly))
-            push!(pbc_position_indices, i)
+            # push!(positions_with_pbc, SVector(x, y - Ly))
+            replace_or_push!(positions_with_pbc, SVector(x, y - Ly), N_particles)
+            # push!(pbc_position_indices, i)
+            replace_or_push!(pbc_position_indices, i, N_particles)
             push!(pbc_images, (0, -1)) 
         end
 
         if x < pbc_layer_depth && y < pbc_layer_depth
             N_particles += 1
-            push!(positions_with_pbc, SVector(x + Lx, y + Ly))
-            push!(pbc_position_indices, i)
+            # push!(positions_with_pbc, SVector(x + Lx, y + Ly))
+            replace_or_push!(positions_with_pbc, SVector(x + Lx, y + Ly), N_particles)
+            # push!(pbc_position_indices, i)
+            replace_or_push!(pbc_position_indices, i, N_particles)
             push!(pbc_images, (1, 1)) 
 
         end
         if x < pbc_layer_depth && y > Ly - pbc_layer_depth
             N_particles += 1
-            push!(positions_with_pbc, SVector(x + Lx, y - Ly))
-            push!(pbc_position_indices, i)
+            # push!(positions_with_pbc, SVector(x + Lx, y - Ly))
+            replace_or_push!(positions_with_pbc, SVector(x + Lx, y - Ly), N_particles)
+            # push!(pbc_position_indices, i)
+            replace_or_push!(pbc_position_indices, i, N_particles)
             push!(pbc_images, (1, -1)) 
         end
         if x > Lx - pbc_layer_depth && y < pbc_layer_depth
             N_particles += 1
-            push!(positions_with_pbc, SVector(x - Lx, y + Ly))
-            push!(pbc_position_indices, i)
+            # push!(positions_with_pbc, SVector(x - Lx, y + Ly))
+            replace_or_push!(positions_with_pbc, SVector(x - Lx, y + Ly), N_particles)
+            # push!(pbc_position_indices, i)
+            replace_or_push!(pbc_position_indices, i, N_particles)
             push!(pbc_images, (-1, 1)) 
         end
         if x > Lx - pbc_layer_depth && y > Ly - pbc_layer_depth
             N_particles += 1
-            push!(positions_with_pbc, SVector(x - Lx, y - Ly))
-            push!(pbc_position_indices, i)
+            # push!(positions_with_pbc, SVector(x - Lx, y - Ly))
+            replace_or_push!(positions_with_pbc, SVector(x - Lx, y - Ly), N_particles)
+            # push!(pbc_position_indices, i)
+            replace_or_push!(pbc_position_indices, i, N_particles)
             push!(pbc_images, (-1, -1)) 
         end
     end
-    arrays.neighborlist.positions_with_pbc = positions_with_pbc
     arrays.neighborlist.position_indices = pbc_position_indices
     arrays.neighborlist.position_pbc_images = pbc_images
+    arrays.neighborlist.N_positions_with_pbc = N_particles
     return 
 end
 
@@ -178,7 +195,8 @@ The process involves:
 function voronoi_tesselation!(parameters, arrays, output)
     # println("Computing Voronoi tessellation... at step ", output.steps_done)
     update_positions_with_pbcs!(parameters, arrays, output)
-    tri = Quickhull.delaunay(arrays.neighborlist.positions_with_pbc)
+    N_positions_with_pbc = arrays.neighborlist.N_positions_with_pbc
+    tri = @views Quickhull.delaunay(arrays.neighborlist.positions_with_pbc[1:N_positions_with_pbc])
     delauney_facets = Quickhull.facets(tri)
 
     update_voronoi_vertices!(parameters, arrays, output, delauney_facets)
@@ -322,7 +340,8 @@ function verify_tessellation(parameters, arrays, output)
     # println("hashes match, verifying tessellation...")
 
     # Iterate through each pre-computed Delaunay facet triplet
-    for triplet in arrays.neighborlist.delaunay_facet_triplets
+    for triplet_index in 1:arrays.neighborlist.N_triplets#arrays.neighborlist.delaunay_facet_triplets
+        triplet = arrays.neighborlist.delaunay_facet_triplets[triplet_index]
         p1_idx, p2_idx, p3_idx = triplet
 
         # We only check triplets if at least one of the particles is part of the original set
@@ -372,40 +391,61 @@ function verify_tessellation(parameters, arrays, output)
 
         end
     end
-    update_voronoi_vertices!(parameters, arrays, output, arrays.neighborlist.delaunay_facet_triplets)
+    update_voronoi_vertices!(parameters, arrays, output)
     return true
 end
 
 
+function  update_voronoi_vertices!(parameters, arrays, output, facets)
+    # convert facets to a vector of tuples, place in arrays.neighborlist.delaunay_facet_triplets
+    N_triplets = 0 
+    for facet in facets
+        N_triplets += 1
+        triplet = (facet[1], facet[2], facet[3])
+        replace_or_push!(arrays.neighborlist.delaunay_facet_triplets, triplet, N_triplets)
+    end
+    arrays.neighborlist.N_triplets = N_triplets
 
+    # set all remaining facets to (-1, -1, -1 )
+    # this is not strictly necessary, but it ensures that we get hard errors if we try to access an index that is not filled
+    for i in (N_triplets + 1):length(arrays.neighborlist.delaunay_facet_triplets)
+        replace_or_push!(arrays.neighborlist.delaunay_facet_triplets, (-1, -1, -1), i)
+    end
+
+    # now we can update the voronoi vertices
+    return update_voronoi_vertices!(parameters, arrays, output)
+end
 
 """
 
 """
-function  update_voronoi_vertices!(parameters, arrays, output, triplets)
+function  update_voronoi_vertices!(parameters, arrays, output)
 
     positions_with_pbc = arrays.neighborlist.positions_with_pbc
-    N_pbc = length(positions_with_pbc)
 
-    new_triplets = Tuple{Int, Int, Int}[]
+    N_voronoi_neighbors_pp = arrays.neighborlist.N_voronoi_neighbors_pp
+    N_voronoi_vertices_pp = arrays.neighborlist.N_voronoi_vertices_pp
+    N_triplets = arrays.neighborlist.N_triplets
+    N_positions_with_pbc = arrays.neighborlist.N_positions_with_pbc
+
+
+    # new_triplets = Tuple{Int, Int, Int}[]
     
     empty!(arrays.neighborlist.voronoi_vertices)
     empty!(arrays.neighborlist.voronoi_neighbors)
     empty!(arrays.neighborlist.voronoi_vertex_indices)
-    for _ in 1:N_pbc
+    for _ in 1:N_positions_with_pbc
         push!(arrays.neighborlist.voronoi_neighbors, Int[])
         push!(arrays.neighborlist.voronoi_vertex_indices, Int[])
     end
 
-    for facet in triplets
-        i = facet[1] # This is idx1_pbc
-        j = facet[2] # This is idx2_pbc
-        k = facet[3] # This is idx3_pbc
+    N_voronoi_vertices = 0
+    for triplet_index in 1:N_triplets
+        triplet = arrays.neighborlist.delaunay_facet_triplets[triplet_index]
+        i = triplet[1] # This is idx1_pbc
+        j = triplet[2] # This is idx2_pbc
+        k = triplet[3] # This is idx3_pbc
 
-        
-        triplet = (i,j,k)
-        
-        push!(new_triplets, triplet)
     
         # add these to the voronoi neighborlist for every particle pair, checking if it is already filled
         if !(j in arrays.neighborlist.voronoi_neighbors[i])
@@ -437,19 +477,21 @@ function  update_voronoi_vertices!(parameters, arrays, output, triplets)
         )
 
         push!(arrays.neighborlist.voronoi_vertices, voronoi_vertex_position)
+        N_voronoi_vertices += 1
+        # replace_or_push!(arrays.neighborlist.voronoi_vertices, voronoi_vertex_position, N_voronoi_vertices)
         # # add the voronoi vertex to the voronoi vertices list
 
-        push!(arrays.neighborlist.voronoi_vertex_indices[i], length(arrays.neighborlist.voronoi_vertices))
-        push!(arrays.neighborlist.voronoi_vertex_indices[j], length(arrays.neighborlist.voronoi_vertices))
-        push!(arrays.neighborlist.voronoi_vertex_indices[k], length(arrays.neighborlist.voronoi_vertices))
+        push!(arrays.neighborlist.voronoi_vertex_indices[i], N_voronoi_vertices)
+        push!(arrays.neighborlist.voronoi_vertex_indices[j], N_voronoi_vertices)
+        push!(arrays.neighborlist.voronoi_vertex_indices[k], N_voronoi_vertices)
     end
 
-    for particle in 1:N_pbc
+    for particle in 1:N_positions_with_pbc
         voronoi_center = positions_with_pbc[particle]
         # sort the voronoi vertex indices counterclockwise
         voronoi_vertex_indices_new = sort_indices_counter_clockwise(arrays.neighborlist.voronoi_vertex_indices[particle], arrays.neighborlist.voronoi_vertices, voronoi_center)
         # replace the voronoi vertex indices with the new ones
         arrays.neighborlist.voronoi_vertex_indices[particle] = voronoi_vertex_indices_new
     end
-    arrays.neighborlist.delaunay_facet_triplets = new_triplets
+    # arrays.neighborlist.N_voronoi_vertices = N_voronoi_vertices
 end

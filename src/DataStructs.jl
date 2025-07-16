@@ -57,25 +57,32 @@ The `delauney_circumcenters` field is a vector of vectors, where each inner vect
 """
 mutable struct VoronoiNeighborList
     voronoi_neighbors::Vector{Vector{Int64}}            # List of Voronoi neighbors for each particle
-    N_voronoi_neighbors::Vector{Int64}                   # Number of Voronoi neighbors for each particle
     voronoi_vertex_indices::Vector{Vector{Int64}}     # List of Voronoi vertices for each particle sorted counterclockwise
-    N_voronoi_vertex_indices::Vector{Int64}              # Number of Voronoi vertices for each particle
     voronoi_vertices::Vector{SVector{2,Float64}}                   # List of voronoi_vertices
     positions_with_pbc::Vector{SVector{2, Float64}}               # List of positions with periodic boundary conditions
     position_indices::Vector{Int64}                               # List of indices for the positions with periodic boundary conditions
     position_pbc_images::Vector{Tuple{Int, Int}}                     # List of periodic boundary condition images for the positions
     delaunay_facet_triplets::Vector{NTuple{3, Int}}               # Stores original particle indices forming Delaunay facets
-    check_tesselation::Bool # Flag which controls whether tesselation is checked or if tesselation is performed every time step regardless of its validity. For debugging. Set to true for performance.
-    VoronoiNeighborList(N) = new(
-        Vector{Int64}[],
-        Int64[],
-        Vector{Int64}[],
-        Int64[],
-        SVector{2, Float64}[],        
-        SVector{2, Float64}[],
-        Int64[],
-        Tuple{Int, Int}[],
-        NTuple{3, Int}[], # Initialize delaunay_facet_triplets
+    N_voronoi_neighbors_pp::Vector{Int64}                   # Number of Voronoi neighbors for each particle
+    N_voronoi_vertices_pp::Vector{Int64}                      # Number of Voronoi vertices for each particle
+    N_voronoi_vertices::Int64                   # Number of Voronoi vertices
+    N_triplets::Int64                     # Number of Delaunay triplets
+    N_positions_with_pbc::Int64                     # Number of positions with periodic boundary conditions
+    check_tesselation::Bool # Flag which controls whether tesselation is checked or if tesselation 
+                # is performed every time step regardless of its validity. For debugging. Set to true for performance.
+    VoronoiNeighborList() = new(
+        Vector{Vector{Int64}}(),
+        Vector{Vector{Int64}}(),
+        Vector{SVector{2, Float64}}(),
+        Vector{SVector{2, Float64}}(),
+        Vector{Int64}(),
+        Vector{Tuple{Int, Int}}(),
+        Vector{NTuple{3, Int}}(),
+        Vector{Int64}(),
+        Vector{Int64}(),
+        0,
+        0,
+        0,
         true
     )
 end
@@ -120,7 +127,7 @@ struct ArrayStruct{NB}
         zeros(Float64, N),
         zeros(Float64, N),
         zeros(Float64, N),
-        VoronoiNeighborList(N)
+        VoronoiNeighborList()
     )
 end
 
