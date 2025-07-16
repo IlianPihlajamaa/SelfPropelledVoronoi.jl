@@ -261,9 +261,10 @@ function run_simulation!(parameters, arrays, output, N_steps)
     voronoi_tesselation!(parameters, arrays, output)
     print_arr = when_to_print_array(N_steps + start_step + 10)
     # Main simulation loop
+    t0 = time()
     while true
         if parameters.verbose && step in print_arr
-            println("Step: ", step)
+            println("Step: ", step, " Elpased time: ", round(time() - t0, digits=2), " seconds")
         end
         # invoke callback
         parameters.callback(parameters, arrays, output)

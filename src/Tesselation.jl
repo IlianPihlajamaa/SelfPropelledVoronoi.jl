@@ -187,7 +187,7 @@ function voronoi_tesselation!(parameters, arrays, output)
 end
 
 """
-    sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertex_positions_per_particle, voronoi_vertices, voronoi_center, Lx, Ly)
+    sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertices, voronoi_center, Lx, Ly)
 
 Sorts the Voronoi vertex indices and their corresponding positions for a specific
 particle's Voronoi cell in a counter-clockwise (CCW) order around the cell's center.
@@ -199,7 +199,6 @@ naturally provides an ordering for CCW sorting.
 
 # Arguments
 - `voronoi_vertex_indices::Vector{Int}`: A vector of integer indices pointing to the global `voronoi_vertices` list. These are the vertices associated with the specific particle's cell before sorting.
-- `voronoi_vertex_positions_per_particle::Vector{SVector{2, Float64}}`: A vector of 2D positions (`SVector{2, Float64}`) of the Voronoi vertices, corresponding element-wise to `voronoi_vertex_indices`. This list is also sorted along with `voronoi_vertex_indices`.
 - `voronoi_vertices::Vector{SVector{2, Float64}}`: The global list containing the 2D positions of all Voronoi vertices in the system. The indices in `voronoi_vertex_indices` refer to this list.
 - `voronoi_center::SVector{2, Float64}`: The 2D position of the center of the Voronoi cell, which is the position of the particle itself. This is the reference point for angle calculations.
 - `Lx::Float64`: The width of the simulation box. Currently unused in this function.
@@ -208,9 +207,8 @@ naturally provides an ordering for CCW sorting.
 # Returns
 - `Tuple{Vector{Int}, Vector{SVector{2, Float64}}}`: A tuple containing two new vectors:
     1.  The sorted `voronoi_vertex_indices` for the particle's cell, ordered counter-clockwise.
-    2.  The correspondingly sorted `voronoi_vertex_positions_per_particle`.
 """
-function sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertex_positions_per_particle, voronoi_vertices, voronoi_center)
+function sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertices, voronoi_center)
     # sort the voronoi vertex indices counterclockwise
     # using the angle between the voronoi center and the voronoi vertices
     angles = zeros(Float64, length(voronoi_vertex_indices))
@@ -221,7 +219,7 @@ function sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertex_p
         angles[i] = angle
     end
     sorted_indices = sortperm(angles)
-    return voronoi_vertex_indices[sorted_indices], voronoi_vertex_positions_per_particle[sorted_indices]
+    return voronoi_vertex_indices[sorted_indices]
 end
 
 
@@ -393,11 +391,9 @@ function  update_voronoi_vertices!(parameters, arrays, output, triplets)
     
     empty!(arrays.neighborlist.voronoi_vertices)
     empty!(arrays.neighborlist.voronoi_neighbors)
-    empty!(arrays.neighborlist.voronoi_vertex_positions_per_particle)
     empty!(arrays.neighborlist.voronoi_vertex_indices)
     for _ in 1:N_pbc
         push!(arrays.neighborlist.voronoi_neighbors, Int[])
-        push!(arrays.neighborlist.voronoi_vertex_positions_per_particle, SVector{2, Float64}[])
         push!(arrays.neighborlist.voronoi_vertex_indices, Int[])
     end
 
@@ -444,20 +440,16 @@ function  update_voronoi_vertices!(parameters, arrays, output, triplets)
         # # add the voronoi vertex to the voronoi vertices list
 
         push!(arrays.neighborlist.voronoi_vertex_indices[i], length(arrays.neighborlist.voronoi_vertices))
-        push!(arrays.neighborlist.voronoi_vertex_positions_per_particle[i], voronoi_vertex_position)
         push!(arrays.neighborlist.voronoi_vertex_indices[j], length(arrays.neighborlist.voronoi_vertices))
-        push!(arrays.neighborlist.voronoi_vertex_positions_per_particle[j], voronoi_vertex_position)
         push!(arrays.neighborlist.voronoi_vertex_indices[k], length(arrays.neighborlist.voronoi_vertices))
-        push!(arrays.neighborlist.voronoi_vertex_positions_per_particle[k], voronoi_vertex_position)
     end
 
     for particle in 1:N_pbc
         voronoi_center = positions_with_pbc[particle]
         # sort the voronoi vertex indices counterclockwise
-        voronoi_vertex_indices_new, voronoi_vertex_positions_per_particle_new = sort_indices_counter_clockwise(arrays.neighborlist.voronoi_vertex_indices[particle], arrays.neighborlist.voronoi_vertex_positions_per_particle[particle], arrays.neighborlist.voronoi_vertices, voronoi_center)
+        voronoi_vertex_indices_new = sort_indices_counter_clockwise(arrays.neighborlist.voronoi_vertex_indices[particle], arrays.neighborlist.voronoi_vertices, voronoi_center)
         # replace the voronoi vertex indices with the new ones
         arrays.neighborlist.voronoi_vertex_indices[particle] = voronoi_vertex_indices_new
-        arrays.neighborlist.voronoi_vertex_positions_per_particle[particle] = voronoi_vertex_positions_per_particle_new
     end
     arrays.neighborlist.delaunay_facet_triplets = new_triplets
 end

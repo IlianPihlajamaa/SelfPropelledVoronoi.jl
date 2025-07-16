@@ -81,7 +81,6 @@ function compute_forces_SPV!(parameters, arrays, output)
     N = parameters.N
     voronoi_neighbors = arrays.neighborlist.voronoi_neighbors
     voronoi_vertices = arrays.neighborlist.voronoi_vertices
-    voronoi_vertices_per_particle = arrays.neighborlist.voronoi_vertex_positions_per_particle
     voronoi_indices = arrays.neighborlist.voronoi_vertex_indices
 
     if verify_tessellation(parameters, arrays, output) == false
@@ -115,24 +114,15 @@ function compute_forces_SPV!(parameters, arrays, output)
 
         # part 1: -dEi/dri
         for j in eachindex(voronoi_indices[particle_i]) # loop over all h
-            next = j % length(voronoi_vertices_per_particle[particle_i]) + 1
-            prev = j == 1 ? length(voronoi_vertices_per_particle[particle_i]) : j - 1
+            N_vertices_i = length(voronoi_indices[particle_i])
+            next = j % N_vertices_i + 1
+            prev = j == 1 ? N_vertices_i : j - 1
 
-            h_i_j = voronoi_vertices_per_particle[particle_i][j]
-            h_i_jp1 = voronoi_vertices_per_particle[particle_i][next]
-            h_i_jm1 = voronoi_vertices_per_particle[particle_i][prev]
+            h_i_j = voronoi_vertices[voronoi_indices[particle_i][j]]
+            h_i_jp1 = voronoi_vertices[voronoi_indices[particle_i][next]]
+            h_i_jm1 = voronoi_vertices[voronoi_indices[particle_i][prev]]
 
             # compute the distance between h_i_j and h_i_jp1
-            # hijp1_m_hij = h_i_jp1 - h_i_j
-            # hij_m_hijm1 = h_i_j - h_i_jm1
-            # hijp1_m_hij_length = sqrt(hijp1_m_hij[1]^2 + hijp1_m_hij[2]^2)
-            # hij_m_hijm1_length = sqrt(hij_m_hijm1[1]^2 + hij_m_hijm1[2]^2)
-
-            # dAi_dhijx = (h_i_jp1[2] - h_i_jm1[2])/2
-            # dAi_dhijy = (h_i_jm1[1] - h_i_jp1[1])/2
-            # dPi_dhij = hij_m_hijm1/hij_m_hijm1_length + hijp1_m_hij/hijp1_m_hij_length
-            # dPi_dhijx = dPi_dhij[1]
-            # dPi_dhijy = dPi_dhij[2]
             dAi_dhijx, dAi_dhijy = dAi_dhij(h_i_j, h_i_jp1, h_i_jm1)
             dPi_dhijx, dPi_dhijy = dPi_dhij(h_i_j, h_i_jp1, h_i_jm1)
 
@@ -166,36 +156,7 @@ function compute_forces_SPV!(parameters, arrays, output)
         dEi_dxi = dEi_dAi*dAi_dxi + dEi_dPi*dPi_dxi
         dEi_dyi = dEi_dAi*dAi_dyi + dEi_dPi*dPi_dyi
 
-        # we test dAi_dxi by comparing it to the finite difference approximation
-        # posi = arrays.positions[particle_i]
-        # posi_plus = posi + SVector(1e-6, 0.0)
-        # posi_minus = posi - SVector(1e-6, 0.0)
-
-        # arrays.positions[particle_i] = posi_plus
-        # voronoi_tesselation!(parameters, arrays, output)
-        # update_perimeters!(parameters, arrays, output)
-        # update_areas!(parameters, arrays, output)
-        # Ei_plus = compute_energy_i(particle_i, parameters, arrays, output)
-        # Ai_plus = compute_area_i(particle_i, parameters, arrays, output)   
-        # Pi_plus = compute_perimeter_i(particle_i, parameters, arrays, output)
-        # arrays.positions[particle_i] = posi_minus
-        # voronoi_tesselation!(parameters, arrays, output)
-        # update_perimeters!(parameters, arrays, output)
-        # update_areas!(parameters, arrays, output)
-        # Ei_minus = compute_energy_i(particle_i, parameters, arrays, output)
-        # Ai_minus = compute_area_i(particle_i, parameters, arrays, output)
-        # Pi_minus = compute_perimeter_i(particle_i, parameters, arrays, output)
-        # arrays.positions[particle_i] = posi  # restore original position
-        # voronoi_tesselation!(parameters, arrays, output)
-        # update_perimeters!(parameters, arrays, output)
-        # update_areas!(parameters, arrays, output)
-        # dEi_dxi_fd = (Ei_plus - Ei_minus)/(2*1e-6)
-        # dAi_dxi_fd = (Ai_plus - Ai_minus)/(2*1e-6)
-        # dPi_dxi_fd = (Pi_plus - Pi_minus)/(2*1e-6)
-        # @show dEi_dxi, dEi_dxi_fd 
-        # @show dAi_dxi, dAi_dxi_fd
-        # @show dPi_dxi, dPi_dxi_fd
-        
+       
 
         # @show dEi_dxi, dEi_dyi
         Fx -= dEi_dxi
@@ -295,35 +256,6 @@ function compute_forces_SPV!(parameters, arrays, output)
             Fx -= dEj_dxi
             Fy -= dEj_dyi
 
-            # test dEj_dxi by comparing it to the finite difference approximation
-            # posi = arrays.positions[particle_i]
-            # posi_plus = posi + SVector(1e-6, 0.0)
-            # posi_minus = posi - SVector(1e-6, 0.0)
-            # arrays.positions[particle_i] = posi_plus
-            # voronoi_tesselation!(parameters, arrays, output)
-            # update_perimeters!(parameters, arrays, output)
-            # update_areas!(parameters, arrays, output)
-            # Ej_plus = compute_energy_i(originalj, parameters, arrays, output)
-            # Aj_plus = compute_area_i(originalj, parameters, arrays, output)
-            # Pj_plus = compute_perimeter_i(originalj, parameters, arrays, output)
-            # arrays.positions[particle_i] = posi_minus
-            # voronoi_tesselation!(parameters, arrays, output)
-            # update_perimeters!(parameters, arrays, output)
-            # update_areas!(parameters, arrays, output)
-            # Ej_minus = compute_energy_i(originalj, parameters, arrays, output)
-            # Aj_minus = compute_area_i(originalj, parameters, arrays, output)
-            # Pj_minus = compute_perimeter_i(originalj, parameters, arrays, output)
-            # arrays.positions[particle_i] = posi  # restore original position
-            # voronoi_tesselation!(parameters, arrays, output)
-            # update_perimeters!(parameters, arrays, output)
-            # update_areas!(parameters, arrays, output)
-            # dEj_dxi_fd = (Ej_plus - Ej_minus)/(2*1e-6)
-            # dAj_dxi_fd = (Aj_plus - Aj_minus)/(2*1e-6)
-            # dPj_dxi_fd = (Pj_plus - Pj_minus)/(2*1e-6)
-            # @show dEj_dxi, dEj_dxi_fd
-            # @show dAj_dxi, dAj_dxi_fd
-            # @show dPj_dxi, dPj_dxi_fd
-            
         end 
         Fi = SVector(Fx , Fy)   
         arrays.forces[particle_i] = Fi

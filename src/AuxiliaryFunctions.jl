@@ -53,7 +53,7 @@ connecting its Voronoi vertices in sequence. The results are stored in `arrays.p
 - `output::Output`: The simulation output struct. Not directly used in this function but included for consistency in function signatures across the module.
 
 # Notes
-- This function assumes that the Voronoi vertex positions for each cell are already calculated and available in `arrays.neighborlist.voronoi_vertex_positions_per_particle`.
+- This function assumes that the Voronoi vertex positions for each cell are already calculated and available in `arrays.neighborlist.voronoi_vertices`.
 - The `arrays.perimeters` vector is updated in-place with the new perimeter values.
 """
 function update_perimeters!(parameters, arrays, output)
@@ -75,7 +75,7 @@ based on the coordinates of its Voronoi vertices. The results are stored in `arr
 - `output::Output`: The simulation output struct. Not directly used in this function but included for consistency in function signatures across the module.
 
 # Notes
-- This function assumes that the Voronoi vertex positions for each cell are already calculated and available in `arrays.neighborlist.voronoi_vertex_positions_per_particle`, and that these vertices are ordered sequentially.
+- This function assumes that the Voronoi vertex positions for each cell are already calculated and available in `arrays.neighborlist.voronoi_vertices`.
 - The `arrays.areas` vector is updated in-place with the new area values. The shoelace formula calculates signed area, so the division by 2.0 yields the geometric area assuming a consistent vertex ordering.
 """
 function update_areas!(parameters, arrays, output)
@@ -98,7 +98,7 @@ the current areas and perimeters in `arrays` are up-to-date before calculating t
 
 # Arguments
 - `parameters::ParameterStruct`: The main simulation parameter struct. 
-- `arrays::ArrayStruct`: The struct holding simulation arrays. It's passed to `update_areas!` and `update_perimeters!`, which use `arrays.neighborlist.voronoi_vertex_positions_per_particle` and update `arrays.areas` and `arrays.perimeters`.
+- `arrays::ArrayStruct`: The struct holding simulation arrays. It's passed to `update_areas!` and `update_perimeters!`, which use the current areas and perimeters.
 - `output::Output`: The simulation output struct. Passed to `update_areas!` and `update_perimeters!`.
 
 # Returns
@@ -145,16 +145,17 @@ end
 
 
 function compute_area_i(i, parameters, arrays, output)
-    vor_positions = arrays.neighborlist.voronoi_vertex_positions_per_particle[i]
+    vor_indices = arrays.neighborlist.voronoi_vertex_indices[i]
+    vor_positions = arrays.neighborlist.voronoi_vertices
     # compute the area of the voronoi cell
     area = 0.0
-    for j in eachindex(vor_positions)
-        posj = vor_positions[j]
+    for j in eachindex(vor_indices)
+        posj = vor_positions[vor_indices[j]]
         l = j+1
-        if l > length(vor_positions)
+        if l > length(vor_indices)
             l = 1
         end
-        posl = vor_positions[l]
+        posl = vor_positions[vor_indices[l]]
         area += (posj[1]*posl[2] - posl[1]*posj[2])/2
     end
 
@@ -163,16 +164,17 @@ end
 
 
 function compute_perimeter_i(i, parameters, arrays, output)
-    vor_positions = arrays.neighborlist.voronoi_vertex_positions_per_particle[i]
+    vor_indices = arrays.neighborlist.voronoi_vertex_indices[i]
+    vor_positions = arrays.neighborlist.voronoi_vertices
     # compute the perimeter of the voronoi cell
     perimeter = 0.0
-    for j in eachindex(vor_positions)
-        posj = vor_positions[j]
+    for j in eachindex(vor_indices)
+        posj = vor_positions[vor_indices[j]]
         l = j+1
-        if l > length(vor_positions)
+        if l > length(vor_indices)
             l = 1
         end
-        posl = vor_positions[l]
+        posl = vor_positions[vor_indices[l]]
         # compute the distance between posj and posl
         dr = posl - posj
         perimeter += sqrt(sum(dr.*dr))

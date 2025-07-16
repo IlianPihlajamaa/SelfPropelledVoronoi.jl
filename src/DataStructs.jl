@@ -57,8 +57,9 @@ The `delauney_circumcenters` field is a vector of vectors, where each inner vect
 """
 mutable struct VoronoiNeighborList
     voronoi_neighbors::Vector{Vector{Int64}}            # List of Voronoi neighbors for each particle
+    N_voronoi_neighbors::Vector{Int64}                   # Number of Voronoi neighbors for each particle
     voronoi_vertex_indices::Vector{Vector{Int64}}     # List of Voronoi vertices for each particle sorted counterclockwise
-    voronoi_vertex_positions_per_particle::Vector{Vector{SVector{2, Float64}}}  # List of Voronoi vertex positions for each particle
+    N_voronoi_vertex_indices::Vector{Int64}              # Number of Voronoi vertices for each particle
     voronoi_vertices::Vector{SVector{2,Float64}}                   # List of voronoi_vertices
     positions_with_pbc::Vector{SVector{2, Float64}}               # List of positions with periodic boundary conditions
     position_indices::Vector{Int64}                               # List of indices for the positions with periodic boundary conditions
@@ -67,8 +68,9 @@ mutable struct VoronoiNeighborList
     check_tesselation::Bool # Flag which controls whether tesselation is checked or if tesselation is performed every time step regardless of its validity. For debugging. Set to true for performance.
     VoronoiNeighborList(N) = new(
         Vector{Int64}[],
+        Int64[],
         Vector{Int64}[],
-        Vector{SVector{2, Float64}}[],
+        Int64[],
         SVector{2, Float64}[],        
         SVector{2, Float64}[],
         Int64[],
