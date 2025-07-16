@@ -82,6 +82,7 @@ function compute_forces_SPV!(parameters, arrays, output)
     voronoi_neighbors = arrays.neighborlist.voronoi_neighbors
     voronoi_vertices = arrays.neighborlist.voronoi_vertices
     voronoi_indices = arrays.neighborlist.voronoi_vertex_indices
+    N_vertices_pp = arrays.neighborlist.N_voronoi_vertices_pp
 
     if verify_tessellation(parameters, arrays, output) == false
         voronoi_tesselation!(parameters, arrays, output)
@@ -113,8 +114,8 @@ function compute_forces_SPV!(parameters, arrays, output)
         dPi_dyi = 0.0
 
         # part 1: -dEi/dri
-        for j in eachindex(voronoi_indices[particle_i]) # loop over all h
-            N_vertices_i = length(voronoi_indices[particle_i])
+        N_vertices_i = N_vertices_pp[particle_i]
+        for j in 1:N_vertices_i#eachindex(voronoi_indices[particle_i]) # loop over all h
             next = j % N_vertices_i + 1
             prev = j == 1 ? N_vertices_i : j - 1
 
@@ -163,7 +164,9 @@ function compute_forces_SPV!(parameters, arrays, output)
         Fy -= dEi_dyi
 
         # part 2: -dEj/dri for all j
-        for particle_j in voronoi_neighbors[particle_i]
+        N_neighbors_i = arrays.neighborlist.N_voronoi_neighbors_pp[particle_i]
+        for particle_j_idx in 1:N_neighbors_i#voronoi_neighbors[particle_i]
+            particle_j = voronoi_neighbors[particle_i][particle_j_idx]
             originalj = arrays.neighborlist.position_indices[particle_j]
             dEj_dAj = 2 * K_A[originalj] * (areas[originalj] - target_areas[originalj])
             dEj_dPj = 2 * K_P[originalj] * (perimeters[originalj] - target_perimeters[originalj])
@@ -172,7 +175,10 @@ function compute_forces_SPV!(parameters, arrays, output)
             # the positions h and g depend on the positions of the particles i, j, h, and g
             # find the two common vertices h and g that occur both in the voronoi_vertices of i and of j
             h_index = 0
-            for (ih, vertex_k) in enumerate(voronoi_indices[particle_j])
+            N_vertices_j = N_vertices_pp[particle_j]
+            # for (ih, vertex_k) in enumerate(voronoi_indices[particle_j])
+            for ih in 1:N_vertices_j
+                vertex_k = voronoi_indices[particle_j][ih]
                 if vertex_k in voronoi_indices[particle_i]
                     h_index = ih
                     break
@@ -180,30 +186,31 @@ function compute_forces_SPV!(parameters, arrays, output)
             end
             # h_index is the index of the first common vertex in the voronoi_vertices of particle_j in counterclockwise order
             g_index = h_index + 1
-            if g_index > length(voronoi_indices[particle_j])
+            if g_index > N_vertices_j
                 g_index = 1
             end
             # if h_index is 1, it is possible that this is really the second vertex in the counterclockwise order
             # if h_index is 1, we need to check if the next vertex is also in the voronoi_vertices of particle_i
             # if not, we need to set g_index to 1 and h_index to length(voronoi_indices[particle_j])
+            N_vertices_i = N_vertices_pp[particle_i]
             if h_index == 1
-                if !(voronoi_indices[particle_j][2] in voronoi_indices[particle_i])
+                if @views !(voronoi_indices[particle_j][2] in voronoi_indices[particle_i][1:N_vertices_i])
                     g_index = 1
-                    h_index = length(voronoi_indices[particle_j])
+                    h_index = N_vertices_j
                 end
             end
             # test if h_index and g_index are valid indices
-            if !(voronoi_indices[particle_j][h_index] in voronoi_indices[particle_i] &&
-                 voronoi_indices[particle_j][g_index] in voronoi_indices[particle_i])
+            if @views !(voronoi_indices[particle_j][h_index] in voronoi_indices[particle_i][1:N_vertices_i] &&
+                 voronoi_indices[particle_j][g_index] in voronoi_indices[particle_i][1:N_vertices_i])
                 @show particle_i, particle_j, h_index, g_index
-                @show voronoi_indices[particle_j]
-                @show voronoi_indices[particle_i]
+                @show voronoi_indices[particle_j][1:N_vertices_j]
+                @show voronoi_indices[particle_i][1:N_vertices_i]
                 error("Error: h_index and g_index should be valid indices in voronoi_indices[particle_i]")
             end
             
 
-            hprev_index = h_index == 1 ? length(voronoi_indices[particle_j]) : h_index - 1
-            gnext_index = g_index == length(voronoi_indices[particle_j]) ? 1 : g_index + 1
+            hprev_index = h_index == 1 ? N_vertices_j : h_index - 1
+            gnext_index = g_index == N_vertices_j ? 1 : g_index + 1
 
             # these are 4 subsequent voronoi vertices around particle_j
             hprev = voronoi_vertices[voronoi_indices[particle_j][hprev_index]]

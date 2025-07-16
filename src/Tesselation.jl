@@ -76,90 +76,58 @@ function update_positions_with_pbcs!(parameters, arrays, output)
 
     positions_with_pbc = arrays.neighborlist.positions_with_pbc
     pbc_position_indices = arrays.neighborlist.position_indices
-    pbc_images = Tuple{Int, Int}[]
-
 
     # first N are the real particles
     for i in 1:N
         N_particles += 1
-        # push!(positions_with_pbc, positions[i])
         replace_or_push!(positions_with_pbc, positions[i], N_particles)
-        # push!(pbc_position_indices, i)
         replace_or_push!(pbc_position_indices, i, N_particles)
-        push!(pbc_images, (0, 0)) # store the original index for later reference
     end
     # now add the positions for the periodic boundary conditions
     for i in 1:N
         x, y = positions[i]
         if x < pbc_layer_depth
             N_particles += 1
-            # push!(positions_with_pbc, SVector(x + Lx, y))
             replace_or_push!(positions_with_pbc, SVector(x + Lx, y), N_particles)
-            # push!(pbc_position_indices, i)
             replace_or_push!(pbc_position_indices, i, N_particles)
-            push!(pbc_images, (1, 0)) 
         end
         if x > Lx - pbc_layer_depth
             N_particles += 1
-            # push!(positions_with_pbc, SVector(x - Lx, y))
             replace_or_push!(positions_with_pbc, SVector(x - Lx, y), N_particles)
-            # push!(pbc_position_indices, i)
             replace_or_push!(pbc_position_indices, i, N_particles)
-            push!(pbc_images, (-1, 0)) 
         end
         if y < pbc_layer_depth
             N_particles += 1
-            # push!(positions_with_pbc, SVector(x, y + Ly))
             replace_or_push!(positions_with_pbc, SVector(x, y + Ly), N_particles)
-            # push!(pbc_position_indices, i)
             replace_or_push!(pbc_position_indices, i, N_particles)
-            push!(pbc_images, (0, 1)) 
         end
         if y > Ly - pbc_layer_depth
             N_particles += 1
-            # push!(positions_with_pbc, SVector(x, y - Ly))
             replace_or_push!(positions_with_pbc, SVector(x, y - Ly), N_particles)
-            # push!(pbc_position_indices, i)
             replace_or_push!(pbc_position_indices, i, N_particles)
-            push!(pbc_images, (0, -1)) 
         end
 
         if x < pbc_layer_depth && y < pbc_layer_depth
             N_particles += 1
-            # push!(positions_with_pbc, SVector(x + Lx, y + Ly))
             replace_or_push!(positions_with_pbc, SVector(x + Lx, y + Ly), N_particles)
-            # push!(pbc_position_indices, i)
             replace_or_push!(pbc_position_indices, i, N_particles)
-            push!(pbc_images, (1, 1)) 
-
         end
         if x < pbc_layer_depth && y > Ly - pbc_layer_depth
             N_particles += 1
-            # push!(positions_with_pbc, SVector(x + Lx, y - Ly))
             replace_or_push!(positions_with_pbc, SVector(x + Lx, y - Ly), N_particles)
-            # push!(pbc_position_indices, i)
             replace_or_push!(pbc_position_indices, i, N_particles)
-            push!(pbc_images, (1, -1)) 
         end
         if x > Lx - pbc_layer_depth && y < pbc_layer_depth
             N_particles += 1
-            # push!(positions_with_pbc, SVector(x - Lx, y + Ly))
             replace_or_push!(positions_with_pbc, SVector(x - Lx, y + Ly), N_particles)
-            # push!(pbc_position_indices, i)
             replace_or_push!(pbc_position_indices, i, N_particles)
-            push!(pbc_images, (-1, 1)) 
         end
         if x > Lx - pbc_layer_depth && y > Ly - pbc_layer_depth
             N_particles += 1
-            # push!(positions_with_pbc, SVector(x - Lx, y - Ly))
             replace_or_push!(positions_with_pbc, SVector(x - Lx, y - Ly), N_particles)
-            # push!(pbc_position_indices, i)
             replace_or_push!(pbc_position_indices, i, N_particles)
-            push!(pbc_images, (-1, -1)) 
         end
     end
-    arrays.neighborlist.position_indices = pbc_position_indices
-    arrays.neighborlist.position_pbc_images = pbc_images
     arrays.neighborlist.N_positions_with_pbc = N_particles
     return 
 end
@@ -204,41 +172,6 @@ function voronoi_tesselation!(parameters, arrays, output)
     return 
 end
 
-"""
-    sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertices, voronoi_center, Lx, Ly)
-
-Sorts the Voronoi vertex indices and their corresponding positions for a specific
-particle's Voronoi cell in a counter-clockwise (CCW) order around the cell's center.
-
-The sorting is achieved by calculating the angle of each vertex relative to the
-`voronoi_center` (the particle's position) and then sorting based on these angles.
-The `atan(dy, dx)` function is used to get angles in the range `(-π, π]`, which
-naturally provides an ordering for CCW sorting.
-
-# Arguments
-- `voronoi_vertex_indices::Vector{Int}`: A vector of integer indices pointing to the global `voronoi_vertices` list. These are the vertices associated with the specific particle's cell before sorting.
-- `voronoi_vertices::Vector{SVector{2, Float64}}`: The global list containing the 2D positions of all Voronoi vertices in the system. The indices in `voronoi_vertex_indices` refer to this list.
-- `voronoi_center::SVector{2, Float64}`: The 2D position of the center of the Voronoi cell, which is the position of the particle itself. This is the reference point for angle calculations.
-- `Lx::Float64`: The width of the simulation box. Currently unused in this function.
-- `Ly::Float64`: The height of the simulation box. Currently unused in this function.
-
-# Returns
-- `Tuple{Vector{Int}, Vector{SVector{2, Float64}}}`: A tuple containing two new vectors:
-    1.  The sorted `voronoi_vertex_indices` for the particle's cell, ordered counter-clockwise.
-"""
-function sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertices, voronoi_center)
-    # sort the voronoi vertex indices counterclockwise
-    # using the angle between the voronoi center and the voronoi vertices
-    angles = zeros(Float64, length(voronoi_vertex_indices))
-    for (i, voronoi_vertex_index) in enumerate(voronoi_vertex_indices)
-        dx = voronoi_vertices[voronoi_vertex_index][1] - voronoi_center[1]
-        dy = voronoi_vertices[voronoi_vertex_index][2] - voronoi_center[2]
-        angle = atan(dy, dx)
-        angles[i] = angle
-    end
-    sorted_indices = sortperm(angles)
-    return voronoi_vertex_indices[sorted_indices]
-end
 
 
 """
@@ -328,11 +261,9 @@ function verify_tessellation(parameters, arrays, output)
     end
 
     epsilon = 1e-9
-    images_hash = hash(arrays.neighborlist.position_pbc_images)
     indices_hash = hash(arrays.neighborlist.position_indices)
     update_positions_with_pbcs!(parameters, arrays, output)
-    
-    if images_hash != hash(arrays.neighborlist.position_pbc_images) || indices_hash != hash(arrays.neighborlist.position_indices)
+    if  indices_hash != hash(arrays.neighborlist.position_indices)
         # new ghost particles may have been added, so we need to recompute the tessellation
 
         return false
@@ -369,8 +300,9 @@ function verify_tessellation(parameters, arrays, output)
             end
 
             # check all the neighbors of the triplet particle 
-            for particle in arrays.neighborlist.voronoi_neighbors[particle_i]
-
+            N_neighbors = arrays.neighborlist.N_voronoi_neighbors_pp[particle_i]
+            for particle_idx in 1:N_neighbors
+                particle = arrays.neighborlist.voronoi_neighbors[particle_i][particle_idx]
                 # Skip the particles that are part of the triplet itself
                 if particle == p1_idx || particle == p2_idx || particle == p3_idx
                     continue
@@ -427,44 +359,50 @@ function  update_voronoi_vertices!(parameters, arrays, output)
     N_voronoi_vertices_pp = arrays.neighborlist.N_voronoi_vertices_pp
     N_triplets = arrays.neighborlist.N_triplets
     N_positions_with_pbc = arrays.neighborlist.N_positions_with_pbc
-
-
-    # new_triplets = Tuple{Int, Int, Int}[]
     
     empty!(arrays.neighborlist.voronoi_vertices)
-    empty!(arrays.neighborlist.voronoi_neighbors)
-    empty!(arrays.neighborlist.voronoi_vertex_indices)
-    for _ in 1:N_positions_with_pbc
-        push!(arrays.neighborlist.voronoi_neighbors, Int[])
-        push!(arrays.neighborlist.voronoi_vertex_indices, Int[])
+
+    for i in (length(arrays.neighborlist.voronoi_neighbors)+1):N_positions_with_pbc
+        replace_or_push!(arrays.neighborlist.voronoi_neighbors, Int[], i)
+        replace_or_push!(arrays.neighborlist.voronoi_vertex_indices, Int[], i)
+    end
+
+    for i in 1:N_positions_with_pbc
+        replace_or_push!(N_voronoi_neighbors_pp, 0, i)
+        replace_or_push!(N_voronoi_vertices_pp, 0, i)
     end
 
     N_voronoi_vertices = 0
     for triplet_index in 1:N_triplets
         triplet = arrays.neighborlist.delaunay_facet_triplets[triplet_index]
-        i = triplet[1] # This is idx1_pbc
-        j = triplet[2] # This is idx2_pbc
-        k = triplet[3] # This is idx3_pbc
+        i = triplet[1]
+        j = triplet[2]
+        k = triplet[3]
 
-    
         # add these to the voronoi neighborlist for every particle pair, checking if it is already filled
-        if !(j in arrays.neighborlist.voronoi_neighbors[i])
-            push!(arrays.neighborlist.voronoi_neighbors[i], j)
+        @views if !(j in arrays.neighborlist.voronoi_neighbors[i][1:N_voronoi_neighbors_pp[i]])
+            N_voronoi_neighbors_pp[i] += 1
+            replace_or_push!(arrays.neighborlist.voronoi_neighbors[i], j, N_voronoi_neighbors_pp[i])
         end
-        if !(k in arrays.neighborlist.voronoi_neighbors[i])
-            push!(arrays.neighborlist.voronoi_neighbors[i], k)
+        @views if !(k in arrays.neighborlist.voronoi_neighbors[i][1:N_voronoi_neighbors_pp[i]])
+            N_voronoi_neighbors_pp[i] += 1
+            replace_or_push!(arrays.neighborlist.voronoi_neighbors[i], k, N_voronoi_neighbors_pp[i])
         end
-        if !(i in arrays.neighborlist.voronoi_neighbors[j])
-            push!(arrays.neighborlist.voronoi_neighbors[j], i)
+        @views if !(i in arrays.neighborlist.voronoi_neighbors[j][1:N_voronoi_neighbors_pp[j]])
+            N_voronoi_neighbors_pp[j] += 1
+            replace_or_push!(arrays.neighborlist.voronoi_neighbors[j], i, N_voronoi_neighbors_pp[j])
         end
-        if !(k in arrays.neighborlist.voronoi_neighbors[j])
-            push!(arrays.neighborlist.voronoi_neighbors[j], k)
+        @views if !(k in arrays.neighborlist.voronoi_neighbors[j][1:N_voronoi_neighbors_pp[j]])
+            N_voronoi_neighbors_pp[j] += 1
+            replace_or_push!(arrays.neighborlist.voronoi_neighbors[j], k, N_voronoi_neighbors_pp[j])
         end
-        if !(i in arrays.neighborlist.voronoi_neighbors[k])
-            push!(arrays.neighborlist.voronoi_neighbors[k], i)
+        @views if !(i in arrays.neighborlist.voronoi_neighbors[k][1:N_voronoi_neighbors_pp[k]])
+            N_voronoi_neighbors_pp[k] += 1
+            replace_or_push!(arrays.neighborlist.voronoi_neighbors[k], i, N_voronoi_neighbors_pp[k])
         end
-        if !(j in arrays.neighborlist.voronoi_neighbors[k])
-            push!(arrays.neighborlist.voronoi_neighbors[k], j)
+        @views if !(j in arrays.neighborlist.voronoi_neighbors[k][1:N_voronoi_neighbors_pp[k]])
+            N_voronoi_neighbors_pp[k] += 1
+            replace_or_push!(arrays.neighborlist.voronoi_neighbors[k], j, N_voronoi_neighbors_pp[k]) 
         end
 
         # compute the voronoi vertices as the circumcenter of the facet
@@ -480,18 +418,86 @@ function  update_voronoi_vertices!(parameters, arrays, output)
         N_voronoi_vertices += 1
         # replace_or_push!(arrays.neighborlist.voronoi_vertices, voronoi_vertex_position, N_voronoi_vertices)
         # # add the voronoi vertex to the voronoi vertices list
-
-        push!(arrays.neighborlist.voronoi_vertex_indices[i], N_voronoi_vertices)
-        push!(arrays.neighborlist.voronoi_vertex_indices[j], N_voronoi_vertices)
-        push!(arrays.neighborlist.voronoi_vertex_indices[k], N_voronoi_vertices)
+        N_voronoi_vertices_pp[i] += 1
+        replace_or_push!(arrays.neighborlist.voronoi_vertex_indices[i], N_voronoi_vertices, N_voronoi_vertices_pp[i])
+        N_voronoi_vertices_pp[j] += 1
+        replace_or_push!(arrays.neighborlist.voronoi_vertex_indices[j], N_voronoi_vertices, N_voronoi_vertices_pp[j])
+        N_voronoi_vertices_pp[k] += 1
+        replace_or_push!(arrays.neighborlist.voronoi_vertex_indices[k], N_voronoi_vertices, N_voronoi_vertices_pp[k])
     end
+
+
 
     for particle in 1:N_positions_with_pbc
-        voronoi_center = positions_with_pbc[particle]
         # sort the voronoi vertex indices counterclockwise
-        voronoi_vertex_indices_new = sort_indices_counter_clockwise(arrays.neighborlist.voronoi_vertex_indices[particle], arrays.neighborlist.voronoi_vertices, voronoi_center)
+        sort_indices_counter_clockwise!(arrays.neighborlist, particle)
         # replace the voronoi vertex indices with the new ones
-        arrays.neighborlist.voronoi_vertex_indices[particle] = voronoi_vertex_indices_new
+        # arrays.neighborlist.voronoi_vertex_indices[particle] = voronoi_vertex_indices_new
+        N_vertices_particle = N_voronoi_vertices_pp[particle]
+        @assert length(arrays.neighborlist.voronoi_vertex_indices[particle]) == N_vertices_particle "voronoi_vertex_indices for particle $particle should have length $N_vertices_particle, but has length $(length(arrays.neighborlist.voronoi_vertex_indices[particle]))"
     end
-    # arrays.neighborlist.N_voronoi_vertices = N_voronoi_vertices
+end
+
+
+"""
+    sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertices, voronoi_center, Lx, Ly)
+
+Sorts the Voronoi vertex indices and their corresponding positions for a specific
+particle's Voronoi cell in a counter-clockwise (CCW) order around the cell's center.
+
+The sorting is achieved by calculating the angle of each vertex relative to the
+`voronoi_center` (the particle's position) and then sorting based on these angles.
+The `atan(dy, dx)` function is used to get angles in the range `(-π, π]`, which
+naturally provides an ordering for CCW sorting.
+
+# Arguments
+- `voronoi_vertex_indices::Vector{Int}`: A vector of integer indices pointing to the global `voronoi_vertices` list. These are the vertices associated with the specific particle's cell before sorting.
+- `voronoi_vertices::Vector{SVector{2, Float64}}`: The global list containing the 2D positions of all Voronoi vertices in the system. The indices in `voronoi_vertex_indices` refer to this list.
+- `voronoi_center::SVector{2, Float64}`: The 2D position of the center of the Voronoi cell, which is the position of the particle itself. This is the reference point for angle calculations.
+- `Lx::Float64`: The width of the simulation box. Currently unused in this function.
+- `Ly::Float64`: The height of the simulation box. Currently unused in this function.
+
+# Returns
+- `Tuple{Vector{Int}, Vector{SVector{2, Float64}}}`: A tuple containing two new vectors:
+    1.  The sorted `voronoi_vertex_indices` for the particle's cell, ordered counter-clockwise.
+"""
+# function sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertices, voronoi_center)
+function sort_indices_counter_clockwise!(neighborlist, particle)
+    N_vertices_particle = neighborlist.N_voronoi_vertices_pp[particle]
+    voronoi_vertex_indices = @view neighborlist.voronoi_vertex_indices[particle][1:N_vertices_particle]
+    voronoi_vertices = neighborlist.voronoi_vertices
+    voronoi_center = neighborlist.positions_with_pbc[particle]
+    # sort the voronoi vertex indices counterclockwise
+    # using the angle between the voronoi center and the voronoi vertices
+    # angles = zeros(Float64, length(voronoi_vertex_indices))
+    angles = neighborlist.temp_buffer3
+    if length(angles) != N_vertices_particle
+        resize!(angles, N_vertices_particle)
+    end
+
+    for (i, voronoi_vertex_index) in enumerate(voronoi_vertex_indices)
+        dx = voronoi_vertices[voronoi_vertex_index][1] - voronoi_center[1]
+        dy = voronoi_vertices[voronoi_vertex_index][2] - voronoi_center[2]
+        angle = atan(dy, dx)
+        angles[i] = angle
+    end
+
+    # all of this is to sort the voronoi vertex indices by angle without allocating a new array
+    buf1 = neighborlist.temp_buffer1
+    buf2 = neighborlist.temp_buffer2
+    if length(buf1) != N_vertices_particle
+        resize!(buf1, N_vertices_particle)
+    end
+    if length(buf2) != N_vertices_particle
+        resize!(buf2, N_vertices_particle)
+    end
+    sortperm!(buf2, angles)
+    for i in 1:N_vertices_particle
+        buf1[i] = voronoi_vertex_indices[buf2[i]]
+    end
+    resize!(neighborlist.voronoi_vertex_indices[particle], N_vertices_particle) # Ensure the output vector is the correct size
+    for i in 1:N_vertices_particle
+        neighborlist.voronoi_vertex_indices[particle][i] = buf1[i]
+    end
+    return 
 end

@@ -146,13 +146,14 @@ end
 
 function compute_area_i(i, parameters, arrays, output)
     vor_indices = arrays.neighborlist.voronoi_vertex_indices[i]
+    N_vertices_i = arrays.neighborlist.N_voronoi_vertices_pp[i]
     vor_positions = arrays.neighborlist.voronoi_vertices
     # compute the area of the voronoi cell
     area = 0.0
-    for j in eachindex(vor_indices)
+    for j in 1:N_vertices_i
         posj = vor_positions[vor_indices[j]]
         l = j+1
-        if l > length(vor_indices)
+        if l > N_vertices_i
             l = 1
         end
         posl = vor_positions[vor_indices[l]]
@@ -165,13 +166,14 @@ end
 
 function compute_perimeter_i(i, parameters, arrays, output)
     vor_indices = arrays.neighborlist.voronoi_vertex_indices[i]
+    N_vertices_i = arrays.neighborlist.N_voronoi_vertices_pp[i]
     vor_positions = arrays.neighborlist.voronoi_vertices
     # compute the perimeter of the voronoi cell
     perimeter = 0.0
-    for j in eachindex(vor_indices)
+    for j in 1:N_vertices_i
         posj = vor_positions[vor_indices[j]]
         l = j+1
-        if l > length(vor_indices)
+        if l > N_vertices_i
             l = 1
         end
         posl = vor_positions[vor_indices[l]]
