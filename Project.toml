@@ -16,7 +16,7 @@ HDF5 = "0.17.2"
 LoopVectorization = "0.12.172"
 Quickhull = "0.2"
 Random = "1.10.0"
-SmallCollections = "0.4.0"
+SmallCollections = "0.4.0, 0.5"
 StaticArrays = "1.9.13"
 julia = "1.10"
 
