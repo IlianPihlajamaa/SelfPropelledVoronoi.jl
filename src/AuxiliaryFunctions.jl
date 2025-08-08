@@ -112,6 +112,7 @@ function compute_energy(parameters, arrays, output)
     for i in 1:N
         E += compute_energy_i(i, parameters, arrays, output)
     end
+    output.potential_energy = E
     return E
 end
 
