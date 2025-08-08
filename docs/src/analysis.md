@@ -92,7 +92,8 @@ using SelfPropelledVoronoi
 using SimulationAnalysis
 
 # Load the simulation results
-sim = read_SPV_simulation("mydata.h5")
+traj, params = SelfPropelledVoronoi.load_trajectory("mydata.h5")
+sim = read_SPV_simulation(traj, params)
 
 # Set parameters for g(r) calculation
 Nbins = 100
