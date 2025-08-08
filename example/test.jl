@@ -216,7 +216,7 @@ rho = 1.0
 L = sqrt(N/rho)
 Lx = L
 Ly = L
-dt = 0.05
+dt = 0.1
 pbc_layer_depth = 2.5
 
 # Create a box
@@ -226,7 +226,7 @@ target_perimeters = 3.8*ones(N)
 target_areas = ones(N)
 K_P = ones(N)
 K_A = ones(N)
-active_force_strengths = ones(N)*0.01
+active_force_strengths = ones(N)*0.1
 D_r = ones(N)
 voronoi_cells = VoronoiCells(
     target_perimeters,
@@ -273,7 +273,7 @@ arrays.neighborlist.check_tesselation = true
 
 Nsteps = 1000 ÷ dt
 run_simulation!(parameter_struct, arrays, output, Nsteps)
-visualize = create_visualization_callback(arrays, 25, dt, box)
+visualize = create_visualization_callback(arrays, 250, dt, box)
 
 # with a visualization callback
 parameter_struct2 = ParameterStruct(N = N, dt = dt, 
