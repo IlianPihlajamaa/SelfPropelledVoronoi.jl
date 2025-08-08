@@ -208,3 +208,9 @@ function when_to_print_array(max_steps)
     return print_array
 end
 
+function compute_eta(parameters, arrays, output)
+    elapsed_time = time() - output.start_time
+    remaining_steps = output.total_steps - output.steps_done
+    eta = remaining_steps * (elapsed_time / output.steps_done)
+    return eta
+end
