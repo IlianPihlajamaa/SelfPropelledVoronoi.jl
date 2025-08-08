@@ -128,8 +128,9 @@ function load_trajectory(filename::String)
         callback = nothing
 
         parameter_struct = ParameterStruct(
-            N, dt, kBT, frictionconstant, 
-            0.0, false, box, particles, dump_info, callback, rng
+            N=N, dt=dt, kBT=kBT, frictionconstant=frictionconstant, 
+            periodic_boundary_layer_depth=0.0, verbose=false, box=box,
+            particles=particles, dump_info=dump_info, callback=callback, rng=rng
         )
 
         # Initialize TrajectoryData
