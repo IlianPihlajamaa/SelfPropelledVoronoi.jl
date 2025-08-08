@@ -107,7 +107,6 @@ function load_trajectory(filename::String)
         params_group = file["parameters"]
         N = read(params_group["N"])
         dt = read(params_group["dt"])
-        N_steps = read(params_group["N_steps"])
         kBT = read(params_group["kBT"])
         frictionconstant = read(params_group["frictionconstant"])
         
