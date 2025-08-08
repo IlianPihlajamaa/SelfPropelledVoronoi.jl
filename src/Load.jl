@@ -128,7 +128,7 @@ function load_trajectory(filename::String)
         callback = nothing
 
         parameter_struct = ParameterStruct(
-            N, dt, N_steps, kBT, frictionconstant, 
+            N, dt, kBT, frictionconstant, 
             0.0, false, box, particles, dump_info, callback, rng
         )
 
