@@ -95,15 +95,14 @@ end
     ArrayStruct(N)
 
 A structure that holds various arrays for storing particle properties and the simulation state.
-These arrays are typically updated at each time step of the simulation. The type parameter `NB`
-refers to the type of the neighbor list structure used (e.g., `VoronoiNeighborList`).
+The type parameter `NB` refers to the type of the neighbor list structure used (e.g., `VoronoiNeighborList`).
 
 # Fields
 - `positions::Vector{SVector{2, Float64}}`: Current 2D positions of all particles.
 - `old_positions::Vector{SVector{2, Float64}}`: Positions of all particles at the previous time step. Used for some integration schemes or state tracking.
 - `forces::Vector{SVector{2, Float64}}`: Current 2D forces acting on all particles.
 - `old_forces::Vector{SVector{2, Float64}}`: Forces acting on all particles at the previous time step. Used for some integration schemes.
-- `orientations::Vector{Float64}`: Current orientations of all particles, typically represented as an angle.
+- `orientations::Vector{Float64}`: Current orientations of all particles, represented as an angle.
 - `old_orientations::Vector{Float64}`: Orientations of all particles at the previous time step.
 - `areas::Vector{Float64}`: Current areas of the Voronoi cell corresponding to each particle.
 - `perimeters::Vector{Float64}`: Current perimeters of the Voronoi cell corresponding to each particle.
@@ -138,8 +137,7 @@ end
 """
     Output()
 
-A mutable struct that stores various simulation output quantities. These quantities are typically
-updated throughout the simulation and can be used for monitoring progress, logging, or analysis.
+A mutable struct that stores various simulation output quantities. These quantities are updated throughout the simulation and can be used for monitoring progress, logging, or analysis.
 
 # Fields
 - `potential_energy::Float64`: The total potential energy of the system at the current state.
