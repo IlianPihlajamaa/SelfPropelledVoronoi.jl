@@ -6,7 +6,7 @@ using Random # Provides random number generation capabilities, including Mersenn
 
 # --- Define Simulation Domain and Particle Count ---
 # N: Number of particles in the simulation
-N = 20 
+N = 100
 # box_Lx: Length of the simulation box in the x-dimension
 box_Lx = 10.0 
 # box_Ly: Length of the simulation box in the y-dimension
@@ -65,8 +65,6 @@ params = ParameterStruct(
     # Smaller values generally lead to higher accuracy but increase computation time.
     # units: time units.
     dt = 0.001, 
-    # Total number of simulation steps to perform. The total simulation time will be dt * N_steps.
-    N_steps = 1000, 
      # Thermal energy, product of Boltzmann constant (kB) and Temperature (T). 
     # This term scales the magnitude of random forces due to thermal fluctuations
     # units: energy units.
@@ -127,15 +125,17 @@ output = Output()
 
 # --- Run the Simulation ---
 # run_simulation!: This function executes the main simulation loop.
-# It takes the simulation parameters (params), the initial state of particle arrays (arrays), 
-# and the output structure (output) as input.
+# It takes the simulation parameters (params), the initial state of particle arrays (arrays),  the output structure (output) and the total number of simulation steps to perform as input. The total simulation time will be dt * N_steps.
+N_steps = 1000, 
 # The &#39;!&#39; at the end of the function name is a Julia convention indicating that 
 # the function is likely to modify one or more of its arguments in-place. In this case, 
 # &#39;arrays&#39; (particle positions/orientations) will be updated at each step, and 
 # &#39;output&#39; will be populated with simulation results like `steps_done`.
-run_simulation!(params, arrays, output)
+
+
+run_simulation!(params, arrays, output, N_steps)
 
 # --- Print Simulation Summary ---
 # After the simulation completes, print a message indicating completion and 
 # the total number of steps that were actually performed (which should be stored in output.steps_done).
-println(&quot;Simulation finished. Steps done: $(output.steps_done)&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../overview/">« Overview</a><a class="docs-footer-nextpage" href="../analysis/">Analysis »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Friday 8 August 2025 13:05">Friday 8 August 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+println(&quot;Simulation finished. Steps done: $(output.steps_done)&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../overview/">« Overview</a><a class="docs-footer-nextpage" href="../analysis/">Analysis »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Tuesday 12 August 2025 10:00">Tuesday 12 August 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
