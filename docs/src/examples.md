@@ -9,8 +9,8 @@ Here's a conceptual example of how to use the main module and run a simulation:
 ```julia
 # Import necessary packages
 using SelfPropelledVoronoi # The main package for the simulation
-using StaticArrays # Provides SVector for efficient, statically-sized vectors (used here for 2D positions)
-using Random # Provides random number generation capabilities, including MersenneTwister
+using StaticArrays # Provides SVector for efficient, statically-sized vectors 
+using Random # Provides random number generation
 
 # --- Define Simulation Domain and Particle Count ---
 # N: Number of particles in the simulation
@@ -32,7 +32,7 @@ sim_box = SimulationBox(box_Lx, box_Ly)
 # p0: Target perimeter for each particle (Voronoi cell). 
 # Cells will experience an elastic force resisting deviations from this preferred perimeter.
 # units: length units, consistent with box_Lx, box_Ly.
-p0 = 3.8 * ones(N) # 'ones(N)' creates a vector of N elements, all set to 1.0, then scaled by 3.8.
+p0 = 3.8 * ones(N) 
 
 # A0: Target area for each particle (Voronoi cell). 
 # Similar to p0, deviations from this preferred area will result in an elastic restoring force.
@@ -45,13 +45,11 @@ A0 = 1.0 * ones(N)
 KP = 1.0 * ones(N)
 
 # KA: Area spring constant (or stiffness). 
-# Determines the strength of the force resisting changes to the cell's area. Higher KA means more resistance.
 # units:  energy / area^2 or force / area.
 KA = 1.0 * ones(N)
 
 # f0: Active force strength (or self-propulsion force magnitude). 
 # The magnitude of the intrinsic force that drives each particle's movement. The direction is determined by the orientation of the particle.
-# units:  force units.
 f0 = 1.0 * ones(N)
 
 # Dr: Rotational diffusion rate. 
@@ -65,24 +63,19 @@ particles = VoronoiCells(p0, A0, KP, KA, f0, Dr)
 
 # --- Define Simulation Parameters ---
 # params: A ParameterStruct structure holding various global simulation settings and constants.
-# The constructor uses keyword arguments.
 params = ParameterStruct(
-    # Number of particles (already defined)
+    # Number of particles 
     N = N, 
     # Time step for the numerical integration of equations of motion. 
-    # Smaller values generally lead to higher accuracy but increase computation time.
-    # units: time units.
     dt = 0.001, 
      # Thermal energy, product of Boltzmann constant (kB) and Temperature (T). 
     # This term scales the magnitude of random forces due to thermal fluctuations
-    # units: energy units.
     kBT = 1.0,
-    # Friction coefficient (gamma). Affects the mobility of the cells (the ratio of the force on the cell and its velocity)
+    # Friction coefficient. Affects the mobility of the cells (the ratio of the force on the cell and its velocity)
     frictionconstant = 1.0, 
     # Depth of the layer used for handling interactions across periodic boundaries.
     # Particles within this distance from a boundary will interact with periodic images of particles 
-    # from the opposite side of the simulation box. This value should typically be larger than any interaction cutoffs.
-    # units: length units.
+    # from the opposite side of the simulation box. This value should typically be larger than a neighbor distance. If this is too small, the simulation may crash
     periodic_boundary_layer_depth = 2.5, 
     # If true, the simulation prints progress messages, warnings, or other information to the console.
     verbose = true, 
@@ -92,17 +85,14 @@ params = ParameterStruct(
     particles = particles, 
     # A DumpInfo structure for controlling data output (e.g., saving simulation snapshots). 
     # Here, 'save=false' indicates that no data will be written to disk during this example run.
-    # Default DumpInfo settings might otherwise enable saving.
     dump_info = DumpInfo(save=false), 
     # A user-defined function that is called at the start of every time step during the simulation.
-    # 'p', 'a', 'o' typically refer to the parameters, arrays, and output structs, respectively.
-    # Useful for custom actions like live plotting, on-the-fly analysis, or complex data collection. 
+    # 'p', 'a', 'o' refer to the parameters, arrays, and output structs, respectively.
+    # Useful for custom actions like live plotting, on-the-fly analysis, or data collection. 
     # Here, it's a no-operation (no-op) function, meaning nothing custom is done during simulation steps.
     callback = (p,a,o) -> nothing, 
     # Random Number Generator (RNG) instance.
-    # `MersenneTwister` is a widely used pseudo-random number generator known for its good statistical properties.
-    # Initializing it with a specific seed (1234 here) ensures that the sequence of random numbers
-    # generated will be the same every time the simulation is run with this seed. This is crucial for reproducibility.
+    # Initializing it with a specific seed (1234 here) ensures that the sequence of random numbers generated will be the same every time the simulation is run with this seed. This is crucial for reproducibility.
     RNG = Random.MersenneTwister(1234) 
 )
 
@@ -135,16 +125,5 @@ output = Output()
 # run_simulation!: This function executes the main simulation loop.
 # It takes the simulation parameters (params), the initial state of particle arrays (arrays),  the output structure (output) and the total number of simulation steps to perform as input. The total simulation time will be dt * N_steps.
 N_steps = 1000, 
-# The '!' at the end of the function name is a Julia convention indicating that 
-# the function is likely to modify one or more of its arguments in-place. In this case, 
-# 'arrays' (particle positions/orientations) will be updated at each step, and 
-# 'output' will be populated with simulation results like `steps_done`.
-
-
 run_simulation!(params, arrays, output, N_steps)
-
-# --- Print Simulation Summary ---
-# After the simulation completes, print a message indicating completion and 
-# the total number of steps that were actually performed (which should be stored in output.steps_done).
-println("Simulation finished. Steps done: $(output.steps_done)")
 ```
