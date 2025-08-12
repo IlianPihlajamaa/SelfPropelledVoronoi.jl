@@ -89,7 +89,7 @@ function do_time_step_Euler_Murayama(parameters, arrays, output)
     for particle in 1:parameters.N
         old_orientation = orientations[particle]
         Dr = rotational_diffusion_constants[particle]
-        new_orientation = old_orientation + sqrt(2*dt*Dr) * randn()
+        new_orientation = old_orientation + sqrt(2*dt*Dr) * randn(parameters.RNG)
         orientations[particle] = new_orientation
     end
 
@@ -114,7 +114,7 @@ end
 
 Performs a single time step using the Euler-Heun predictor-corrector integration scheme.
 This method is suitable for stochastic differential equations (SDEs) and offers better
-stability and accuracy than the simpler Euler-Maruyama method for some systems.
+stability and accuracy than the simpler Euler-Maruyama method.
 It involves predicting a future state and then correcting it using an average of forces/drifts.
 
 The operational steps are:
@@ -150,7 +150,6 @@ The operational steps are:
 
 # Notes
 - All relevant fields in `arrays` are modified in-place throughout the function.
-- This scheme aims for better accuracy by averaging drifts over the interval.
 """
 function do_time_step_Euler_Heun!(parameters, arrays, output)
     dt = parameters.dt
@@ -174,7 +173,7 @@ function do_time_step_Euler_Heun!(parameters, arrays, output)
     for particle in 1:parameters.N
         old_orientation = orientations[particle]
         Dr = rotational_diffusion_constants[particle]
-        new_orientation = old_orientation + sqrt(2*dt*Dr) * randn()
+        new_orientation = old_orientation + sqrt(2*dt*Dr) * randn(parameters.RNG)
         orientations[particle] = new_orientation
     end
 
@@ -220,7 +219,6 @@ function do_time_step_Euler_Heun!(parameters, arrays, output)
     old_positions .= positions
     old_orientations .= orientations
 
-   
     return
 end
 
