@@ -264,9 +264,10 @@ function run_simulation!(parameters, arrays, output, N_steps)
     t0 = time()
     while true
         if parameters.verbose && step in print_arr
-            eta = round(compute_eta(parameters, arrays, output), digits=2)
+            eta = round(compute_eta(parameters, arrays, output, t0, N_steps), digits=2)
             Epot = round(output.potential_energy, digits=2)
-            println("Step: $step/$N_steps, ETA: $(eta)s, Elapsed time: $(time() - t0) seconds, Epot = $(Epot)")
+            elapsed = round(time() - t0, digits=2)
+            println("Step: $step/$N_steps, ETA: $(eta)s, Elapsed time: $(elapsed) seconds, Epot = $(Epot)")
         end
         # invoke callback
         parameters.callback(parameters, arrays, output)

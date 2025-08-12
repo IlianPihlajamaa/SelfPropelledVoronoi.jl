@@ -14,7 +14,7 @@ using Random # Provides random number generation capabilities, including Mersenn
 
 # --- Define Simulation Domain and Particle Count ---
 # N: Number of particles in the simulation
-N = 20 
+N = 100
 # box_Lx: Length of the simulation box in the x-dimension
 box_Lx = 10.0 
 # box_Ly: Length of the simulation box in the y-dimension
@@ -73,8 +73,6 @@ params = ParameterStruct(
     # Smaller values generally lead to higher accuracy but increase computation time.
     # units: time units.
     dt = 0.001, 
-    # Total number of simulation steps to perform. The total simulation time will be dt * N_steps.
-    N_steps = 1000, 
      # Thermal energy, product of Boltzmann constant (kB) and Temperature (T). 
     # This term scales the magnitude of random forces due to thermal fluctuations
     # units: energy units.
@@ -135,13 +133,15 @@ output = Output()
 
 # --- Run the Simulation ---
 # run_simulation!: This function executes the main simulation loop.
-# It takes the simulation parameters (params), the initial state of particle arrays (arrays), 
-# and the output structure (output) as input.
+# It takes the simulation parameters (params), the initial state of particle arrays (arrays),  the output structure (output) and the total number of simulation steps to perform as input. The total simulation time will be dt * N_steps.
+N_steps = 1000, 
 # The '!' at the end of the function name is a Julia convention indicating that 
 # the function is likely to modify one or more of its arguments in-place. In this case, 
 # 'arrays' (particle positions/orientations) will be updated at each step, and 
 # 'output' will be populated with simulation results like `steps_done`.
-run_simulation!(params, arrays, output)
+
+
+run_simulation!(params, arrays, output, N_steps)
 
 # --- Print Simulation Summary ---
 # After the simulation completes, print a message indicating completion and 

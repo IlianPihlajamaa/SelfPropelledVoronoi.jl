@@ -40,7 +40,7 @@ using StaticArrays # For SVector
 using Random # For MersenneTwister
 
 # Define parameters (refer to DataStructs.jl for details)
-N = 20
+N = 100
 box_Lx = 10.0
 box_Ly = 10.0
 sim_box = SimulationBox(box_Lx, box_Ly)
@@ -58,7 +58,6 @@ particles = VoronoiCells(p0, A0, KP, KA, f0, Dr)
 params = ParameterStruct(
     N = N,
     dt = 0.001,
-    N_steps = 1000,
     kBT = 1.0, 
     frictionconstant = 1.0,
     periodic_boundary_layer_depth = 2.5, 
@@ -82,7 +81,8 @@ end
 output = Output()
 
 # Run the simulation
-run_simulation!(params, arrays, output)
+N_steps = 1000
+run_simulation!(params, arrays, output, N_steps)
 
 println("Simulation finished. Steps done: $(output.steps_done)")
 ```
