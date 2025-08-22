@@ -166,8 +166,11 @@ The type parameter `A` corresponds to the type of `when_to_save_array`, which is
 - `filename::String`: The name of the file where simulation data will be saved. Defaults to a randomly generated HDF5 filename (e.g., "dump_12345.h5").
 - `when_to_save_array::A`: An array or range specifying the simulation steps at which data should be saved. `A` is the type of this field, typically `AbstractArray`. Defaults to saving every 1000 steps up to 1,000,000.
 - `save_r::Bool`: A boolean flag indicating whether to save particle positions (`true`) or not (`false`). Defaults to `true`.
+- `save_u`::Bool`: A boolean flag indicating whether to save particle orientations (`true`) or not (`false`). Defaults to `true`.
 - `save_F::Bool`: A boolean flag indicating whether to save particle forces (`true`) or not (`false`). Defaults to `false`.
 - `save_Epot::Bool`: A boolean flag indicating whether to save the total potential energy of the system (`true`) or not (`false`). Defaults to `false`.
+- `save_areas::Bool`: A boolean flag indicating whether to save the areas of Voronoi cells (`true`) or not (`false`). Defaults to `true`.
+- `save_perimeters::Bool`: A boolean flag indicating whether to save the perimeters of Voronoi cells (`true`) or not (`false`). Defaults to `true`.
 """
 mutable struct DumpInfo{A<:AbstractArray}
     save::Bool
