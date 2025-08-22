@@ -263,7 +263,8 @@ function run_simulation!(parameters, arrays, output, N_steps)
     while true
         if parameters.verbose && step in print_arr
             eta = round(compute_eta(parameters, arrays, output, t0, N_steps), digits=2)
-            Epot = round(output.potential_energy, digits=2)
+            compute_energy(parameters, arrays, output)
+            Epot = round(output.potential_energy, digits=7)
             elapsed = round(time() - t0, digits=2)
             println("Step: $step/$N_steps, ETA: $(eta)s, Elapsed time: $(elapsed) seconds, Epot = $(Epot)")
         end

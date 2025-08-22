@@ -7,7 +7,7 @@ end
 # Helper function to set up mock objects for testing
 function setup_test_objects(N_val=2, Lx_val=10.0, Ly_val=10.0;
                             filename_val="default_test.h5", steps_val=0,
-                            save_r_val=true, save_F_val=true, save_Epot_val=true)
+                            save_r_val=true, save_u=true, save_F_val=true, save_Epot_val=true)
     
     Random.seed!(1234) # Ensure consistent random values for tests
 

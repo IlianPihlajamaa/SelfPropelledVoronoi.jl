@@ -114,6 +114,7 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
                 step_g["forces"] = stack(arrays.forces)
             end
             if dump_info.save_Epot
+                compute_energy(parameters, arrays, output)
                 step_g["potential_energy"] = output.potential_energy
             end
             if dump_info.save_areas
