@@ -265,7 +265,6 @@ function run_simulation!(parameters, arrays, output, N_steps)
         # invoke callback
         parameters.callback(parameters, arrays, output)
 
-        do_time_step(parameters, arrays, output)
 
         # Check if the simulation should be saved
         if parameters.dump_info.save
@@ -282,6 +281,8 @@ function run_simulation!(parameters, arrays, output, N_steps)
             println("Step: $step/$N_steps, ETA: $(eta)s, Elapsed time: $(elapsed) seconds, Epot = $(Epot)")
         end
 
+        do_time_step(parameters, arrays, output)
+
     
         # Check if the simulation should be stopped
         step = step + 1
@@ -291,4 +292,9 @@ function run_simulation!(parameters, arrays, output, N_steps)
         end
     end
 
+    if parameters.dump_info.save
+        if step in parameters.dump_info.when_to_save_array
+            save_simulation_state!(parameters, arrays, output)
+        end
+    end
 end

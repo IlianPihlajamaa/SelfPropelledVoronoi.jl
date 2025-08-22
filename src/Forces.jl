@@ -88,8 +88,7 @@ function compute_forces_SPV!(parameters, arrays, output)
         voronoi_tesselation!(parameters, arrays, output)
     end
 
-    update_perimeters!(parameters, arrays, output)
-    update_areas!(parameters, arrays, output)
+    compute_energy(parameters, arrays, output) # will also update areas and perims
 
     areas = arrays.areas
     perimeters = arrays.perimeters

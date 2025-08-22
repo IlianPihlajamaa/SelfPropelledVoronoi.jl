@@ -5,9 +5,9 @@ function h5exists(group, name)
 end
 
 # Helper function to set up mock objects for testing
-function setup_test_objects(N_val=2, Lx_val=10.0, Ly_val=10.0;
+function setup_test_objects(N_val=10, Lx_val=10.0, Ly_val=10.0;
                             filename_val="default_test.h5", steps_val=0,
-                            save_r_val=true, save_u=true, save_F_val=true, save_Epot_val=true)
+                            save_r_val=true, save_u_val=true, save_F_val=true, save_Epot_val=true)
     
     Random.seed!(1234) # Ensure consistent random values for tests
 
@@ -19,7 +19,7 @@ function setup_test_objects(N_val=2, Lx_val=10.0, Ly_val=10.0;
     box = SimulationBox(Lx_val, Ly_val)
     dump_info = DumpInfo(
         save=true, filename=filename_val, when_to_save_array=0:1:1000, # Adjusted for more steps
-        save_r=save_r_val, save_F=save_F_val, save_Epot=save_Epot_val
+        save_r=save_r_val, save_u=save_u_val, save_F=save_F_val, save_Epot=save_Epot_val
     )
     
     # ParameterStruct expects a callback and RNG.
@@ -125,7 +125,7 @@ end
         try
             rm(test_filename3, force=true)
             params3, arrays3, output3 = setup_test_objects(filename_val=test_filename3, steps_val=0, 
-                                                            save_r_val=false, save_F_val=false, save_Epot_val=false)
+                                                            save_r_val=false, save_u_val=false, save_F_val=false, save_Epot_val=false)
             SelfPropelledVoronoi.save_simulation_state!(params3, arrays3, output3)
             
             HDF5.h5open(test_filename3, "r") do file
