@@ -106,7 +106,9 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
             step_g = HDF5.create_group(file_handle, current_step_str)
             if dump_info.save_r
                 step_g["positions"] = stack(arrays.positions)
-                step_g["orientations"] = arrays.orientations
+            end
+            if dump_info.save_u
+                step_g["orientations"] = copy(arrays.orientations)
             end
             if dump_info.save_F
                 step_g["forces"] = stack(arrays.forces)

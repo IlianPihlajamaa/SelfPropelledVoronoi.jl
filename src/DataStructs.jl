@@ -174,6 +174,7 @@ mutable struct DumpInfo{A<:AbstractArray}
     filename::String
     when_to_save_array::A
     save_r::Bool
+    save_u::Bool
     save_F::Bool
     save_Epot::Bool
     save_areas::Bool
@@ -183,6 +184,7 @@ mutable struct DumpInfo{A<:AbstractArray}
         filename::String="dump_$(rand(Int)).h5",
         when_to_save_array=0:1000:1000000,
         save_r::Bool=true,
+        save_u::Bool=true,
         save_F::Bool=false,
         save_Epot::Bool=false,
         save_areas::Bool=true,
@@ -192,6 +194,7 @@ mutable struct DumpInfo{A<:AbstractArray}
         filename,
         when_to_save_array,
         save_r,
+        save_u,
         save_F,
         save_Epot,
         save_areas,
