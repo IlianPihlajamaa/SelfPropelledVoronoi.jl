@@ -24,8 +24,8 @@ Currently, `SelfPropelledVoronoi.jl` is not registered. To install it, run:
 
 ```julia
 # From the Julia REPL
-import Pkg; activate(".")
-Pkg.add("https://github.com/IlianPihlajamaa/SelfPropelledVoronoi.jl")
+import Pkg; Pkg.activate(".")
+Pkg.add(url="https://github.com/IlianPihlajamaa/SelfPropelledVoronoi.jl")
 ```
 
 ## Basic Usage / Example
