@@ -76,11 +76,11 @@ output = Output()
 arrays.neighborlist.check_tesselation = true
 
 # Run the simulation
-Nsteps = 1000 ÷ dt
+Nsteps = 10000
 run_simulation!(parameter_struct, arrays, output, Nsteps)
 
 dump_info.save = true
-Nsteps = 10000 ÷ dt
+Nsteps = 100000
 run_simulation!(parameter_struct, arrays, output, Nsteps) 
 
 ```
