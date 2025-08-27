@@ -260,6 +260,9 @@ function run_simulation!(parameters, arrays, output, N_steps)
     print_arr = when_to_print_array(N_steps + start_step + 10)
     # Main simulation loop
     t0 = time()
+
+
+
     while true
 
         # invoke callback
@@ -269,7 +272,7 @@ function run_simulation!(parameters, arrays, output, N_steps)
         # Check if the simulation should be saved
         if parameters.dump_info.save
             if step in parameters.dump_info.when_to_save_array
-                save_simulation_state!(parameters, arrays, output)
+                save_simulation_state!(parameters, arrays, output; needs_newfile=start_step==step)
             end
         end
 
@@ -291,10 +294,10 @@ function run_simulation!(parameters, arrays, output, N_steps)
             break
         end
     end
-
     if parameters.dump_info.save
         if step in parameters.dump_info.when_to_save_array
-            save_simulation_state!(parameters, arrays, output)
+            save_simulation_state!(parameters, arrays, output; needs_newfile=start_step==step)
         end
     end
+
 end

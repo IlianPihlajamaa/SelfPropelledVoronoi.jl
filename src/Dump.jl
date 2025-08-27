@@ -46,18 +46,22 @@ save_simulation_state!(params, arrs, outs)
 ```
 The function returns `nothing`.
 """
-function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct, output::Output)
+function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct, output::Output; needs_newfile=false)
     dump_info = parameters.dump_info
     filename = dump_info.filename
     current_step_str = string(output.steps_done)
     file_exists = isfile(filename)
 
-    if output.steps_done == 0 && file_exists
+    if needs_newfile && file_exists
         println("File $filename already exists!!! Adapting filename to avoid overwriting.")
         base_name, ext = splitext(filename)
         folder = dirname(base_name)
+        if folder == ""
+            folder = "."
+        end
         #add number of files in folder to base_name
-        file_count = length(readdir(folder))
+        files_in_dir = readdir(folder)
+        file_count = count(f -> startswith(f, basename(base_name)) && endswith(f, ext), files_in_dir)
         filename = base_name * "_" * string(file_count) * ext
         dump_info.filename = filename
         println("New filename: $filename")
