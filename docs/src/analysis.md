@@ -15,7 +15,7 @@ We can then compute for example the radial distribution function (RDF) of the Vo
 Let's do a simple simulation, and save the results to an HDF5 file:
 
 ```julia
-import Pkg; Pkg.activate("bin")
+import Pkg; Pkg.activate(".")
 
 using SelfPropelledVoronoi, StaticArrays, Random
 using Statistics
