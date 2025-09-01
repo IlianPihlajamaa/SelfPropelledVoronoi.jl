@@ -204,7 +204,7 @@ function compute_forces_SPV!(parameters, arrays, output)
                 @show particle_i, particle_j, h_index, g_index
                 @show voronoi_indices[particle_j][1:N_vertices_j]
                 @show voronoi_indices[particle_i][1:N_vertices_i]
-                error("Error: h_index and g_index should be valid indices in voronoi_indices[particle_i]")
+                error("Error: h_index and g_index should be valid indices in voronoi_indices[particle_i].  Consider increasing the periodic_boundary_layer_depth value.")
             end
             
 
@@ -229,7 +229,9 @@ function compute_forces_SPV!(parameters, arrays, output)
             if !(particle_i in h_triplet && particle_j in h_triplet && particle_i in g_triplet && particle_j in g_triplet)
                 @show particle_i, particle_j, h_triplet, g_triplet
                 @show arrays.neighborlist.position_indices[collect(h_triplet)], arrays.neighborlist.position_indices[collect(g_triplet)]
-                error("Error: particle_i and particle_j should be part of the triplets that share the common vertex h and g")
+                
+                error("Error: particle_i and particle_j should be part of the triplets that share the common vertex h and g.  Consider increasing the periodic_boundary_layer_depth value.")
+
             end
             # the triplets are (particle_i, particle_j, particle_m) and (particle_i, particle_j, particle_n) where particle_m and particle_n are the two particles that share the common vertex with particle_i and particle_j
             particle_m_idx = findfirst(x -> x != particle_i && x != particle_j, h_triplet) 
