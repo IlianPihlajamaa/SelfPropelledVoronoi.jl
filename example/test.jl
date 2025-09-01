@@ -29,42 +29,10 @@ The first axis shows the particle positions and Voronoi edges, while the second 
 - The printing is necessary to ensure that the visualization updates correctly during the simulation.
 """
 function create_visualization_callback(arrays,  plot_frequency, dt, box)
-    function compute_msd(displacement_array)
-        msd = 0.0
-        for i in eachindex(displacement_array)
-            msd += displacement_array[i][1]^2 + displacement_array[i][2]^2
-        end
-        return msd / length(displacement_array)
-    end
 
-    function compute_mqd(displacement_array)
-        msd = 0.0
-        for i in eachindex(displacement_array)
-            msd += displacement_array[i][1]^4 + displacement_array[i][2]^4
-        end
-        return msd / length(displacement_array)
-    end
-
-    function apply_periodic_boundary_conditions!(displacement_array, box_sizes)
-        for i in eachindex(displacement_array)
-            dr = displacement_array[i]
-            dr -= round.(dr ./ box_sizes) .* box_sizes
-            displacement_array[i] = dr
-        end
-    end
-
-    # This function creates a callback that will be called during the simulation
-    # It will visualize the simulation at each step
-    # N = length(arrays.positions)
-    # energy_list = Observable(Float64[])
-    # mean_squared_displacement_list = Observable(Float64[])
-    # mean_quartic_displacement_list = Observable(Float64[])
-    # displacement_array = [SVector{2, Float64}(0.0, 0.0) for _ in 1:N]
-    previous_positions = copy(arrays.neighborlist.positions_with_pbc)
-    # t_array = @lift dt*eachindex($energy_list)
     plot_positions = Observable(SVector{2, Float64}[])
     for i in 1:arrays.neighborlist.N_positions_with_pbc
-        push!(plot_positions.val, previous_positions[i])
+        push!(plot_positions.val, arrays.neighborlist.positions_with_pbc[i])
     end
 
     plot_voronoi_edges = Observable(Tuple{SVector{2, Float64}, SVector{2, Float64}}[])
@@ -73,7 +41,8 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
     for particle_i in 1:length(arrays.positions)
         indices = arrays.neighborlist.voronoi_vertex_indices[particle_i]
         vor_positions = arrays.neighborlist.voronoi_vertices[indices]
-        for i in 1:length(indices)
+        N_indices = arrays.neighborlist.N_voronoi_vertices_pp[particle_i]
+        for i in 1:N_indices
             j = i % length(indices) + 1
             posi = vor_positions[i]
             posj = vor_positions[j]
@@ -99,92 +68,10 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
         (0, Ly), (0, 0)
     ], color=:black, linewidth=4)
     
-    # max_energy = @lift(
-    #     if isempty($energy_list)
-    #         1.0
-    #     else
-    #         maximum($energy_list)*1.1
-    #     end
-    # )
-
-    # min_energy = @lift(
-    #     if isempty($energy_list)
-    #         0.0
-    #     else
-    #         minimum($energy_list)*0.9
-    #     end
-    #     )
-
-
-    # xmax_energy = @lift(
-    #     if isempty($t_array)
-    #         1.0
-    #     else
-    #         maximum($t_array)
-    #     end
-    # )
-    # ax2 = Axis(fig[1, 2], title="energy", ylabel="energy", xlabel="t", limits=@lift((0, $xmax_energy, $min_energy, $max_energy)))
-    # lines!(ax2, t_array, energy_list, color=:blue)
-
-    # tmin = dt
-    # tmax = @lift(
-    #     if isempty($t_array)
-    #         2dt
-    #     else
-    #         maximum($t_array)
-    #     end
-    # )
-    # ymin = @lift(
-    #     if isempty($mean_squared_displacement_list)
-    #         1e-6
-    #     else
-    #         minimum($mean_squared_displacement_list)*0.9
-    #     end
-    # )
-    # ymax = @lift(
-    #     if isempty($mean_squared_displacement_list)
-    #         1e2
-    #     else
-    #         maximum($mean_squared_displacement_list)*1.1
-    #     end
-    # )
-
-    # ax4 = Axis(fig[2, 2], title="msd", ylabel="msd", xlabel="t", yscale=log10, xscale=log10, limits=@lift(($tmin, $tmax, $ymin, $ymax)))
-    # lines!(ax4, @lift($t_array[2:end]), mean_squared_displacement_list, color=:blue, label="msd")
-    # display(fig)
-    # α2 = @lift 0.5 * ($mean_quartic_displacement_list ./ $mean_squared_displacement_list .^ 2) .- 1
-    # ax3 = Axis(fig[3, 2], title="α2", ylabel="α2", xlabel="t", xscale=log10, limits=(0.01, 1000.0, -1.0, 1.0))
-    # lines!(ax3, @lift($t_array[2:end]), α2, color=:blue, label="α2")
-
     display(fig)
 
     function visualize(parameters, arrays, output)
-        # push!(energy_list[], SelfPropelledVoronoi.compute_energy(parameters, arrays, output))
-
-        # apply periodic boundary conditions
-        # if !(length(energy_list[]) == 1) # no movement yet
-
-            # dr = arrays.positions .- previous_positions
-            # apply_periodic_boundary_conditions!(dr, parameters.box.box_sizes) 
-            # displacement_array .+= dr
-            # push!(mean_squared_displacement_list[], compute_msd(displacement_array))
-            # push!(mean_quartic_displacement_list[], compute_mqd(displacement_array))
-        # end
-
-        # α2new = 0.5 * (mean_quartic_displacement_list[] ./ mean_squared_displacement_list[] .^ 2) .- 1
-        # α2.val = α2new
-        # previous_positions .= arrays.positions
-        # resize!(plot_positions[], length(arrays.neighborlist.N_positions_with_pbc))
-        # for i in 1:length(arrays.neighborlist.N_positions_with_pbc)
-        #     previous_positions[i] = arrays.neighborlist.positions_with_pbc[i]
-        # end
-        # empty!(plot_positions.val)
-        # resize!(plot_positions.val, 0)
-        # for i in 1:parameters.N
-        #     push!(plot_positions.val, arrays.neighborlist.positions_with_pbc[i])
-        # end
-
-        
+       
         if !(output.steps_done % plot_frequency == 0) 
             return
         end
@@ -196,11 +83,7 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
         # visualize the initial configuration
         println("Visualizing step $(output.steps_done)")
 
-        # energy_list[] = copy(energy_list[])
-        # mean_squared_displacement_list[] = copy(mean_squared_displacement_list[])
-
         plot_positions[] = SVector.(arrays.neighborlist.positions_with_pbc[1:arrays.neighborlist.N_positions_with_pbc])
-        broken = false
         # draw voronoi edges
         linesegs2 = Tuple{SVector{2, Float64}, SVector{2, Float64}}[]
         for particle_i in 1:arrays.neighborlist.N_positions_with_pbc
@@ -211,22 +94,12 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
                 j = i % n_indices + 1
                 posi = vor_positions[i]
                 posj = vor_positions[j]
-                # apply periodic boundary conditions
-                # if lineseg is longer than 4, print
-
-                # if sum((posi - posj).^2) > 4.0^2
-                #     # println("Long line segment detected: ", norm(posi - posj))
-                #     println("Wrong tessellation detected at step $(output.steps_done)")
-                #     broken = true
-                # end
 
                 push!(linesegs2, (posi, posj))
             end
         end
         plot_voronoi_edges[] = linesegs2
-        # if broken
-        #     error("Wrong tessellation detected at step $(output.steps_done)")
-        # end
+
     end
 
     return (parameters, arrays, output) -> visualize(parameters, arrays, output)
