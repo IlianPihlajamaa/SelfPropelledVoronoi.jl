@@ -17,7 +17,7 @@ end
 
 
 
-@testset "Tesselation.verify_tessellation" begin
+@testset "Tessellation.verify_tessellation" begin
 
     @testset "Valid Tessellation (Square)" begin
 
@@ -27,9 +27,9 @@ end
         y = rand(Float64, N) .* Ly
         positions_initial = [SVector(x[i], y[i]) for i in 1:N]
         params, arrays, output = setup_test_environment(positions_initial, 20.0)
-        arrays.neighborlist.check_tesselation = true
+        arrays.neighborlist.check_tessellation = true
         # Perform initial tessellation. This populates all relevant fields in arrays.neighborlist.
-        SelfPropelledVoronoi.voronoi_tesselation!(params, arrays, output)
+        SelfPropelledVoronoi.voronoi_tessellation!(params, arrays, output)
 
         positions_new = deepcopy(arrays.positions)
         arrays.positions .= positions_new
@@ -41,7 +41,7 @@ end
     @testset "Invalid Tessellation (Particle Moved into Circumcircle of a Delaunay Facet)" begin
         # Scenario:
         # 1. Start with a square: p1(0,10), p2(10,10), p3(10,0), p4(0,0). Original indices 1,2,3,4.
-        # 2. Call voronoi_tesselation! to populate delaunay_facet_triplets, voronoi_neighbors, position_indices.
+        # 2. Call voronoi_tessellation! to populate delaunay_facet_triplets, voronoi_neighbors, position_indices.
         #    A Delaunay facet for this square could be (1,2,3) (original indices, sorted).
         #    The circumcenter of p1,p2,p3 is (5,5).
         # 3. p4 is a neighbor of p1 and p3 in the initial square tessellation.
@@ -61,10 +61,10 @@ end
             SVector(0.0, 0.0)    # p4 (Original Index 4)
         ]
         params, arrays, output = setup_test_environment(positions_initial, 20.0)
-        arrays.neighborlist.check_tesselation = true
+        arrays.neighborlist.check_tessellation = true
 
         # Perform initial tessellation. This populates all relevant fields in arrays.neighborlist.
-        SelfPropelledVoronoi.voronoi_tesselation!(params, arrays, output)
+        SelfPropelledVoronoi.voronoi_tessellation!(params, arrays, output)
         
         # Set a distinct old_positions to check it's not updated on failure
         arrays.positions .= [SVector(123.0, 456.0), SVector(1.0,1.0), SVector(2.0,2.0), SVector(3.0,3.0)]

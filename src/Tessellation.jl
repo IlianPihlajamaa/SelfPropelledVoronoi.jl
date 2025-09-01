@@ -1,4 +1,3 @@
-# using Combinatorics # No longer needed
 
 """
     replace_or_push!(array, value, index)
@@ -27,12 +26,14 @@ The behavior is as follows:
 - `ArgumentError`: If `index` is not within the valid range for replacement or pushing (i.e., if `index < 1` or `index > length(array) + 1`).
 """
 function replace_or_push!(array, value, index)
+    index < 1 && throw(ArgumentError("index must be ≥ 1 (got $index)"))
+
     if index <= length(array)
         array[index] = value
     elseif index == length(array) + 1
         push!(array, value)
     else
-        ArgumentError("Index out of bounds")
+        throw(ArgumentError("index $index > length(a)+1 = $(length(array)+1)"))
     end
 end
 
@@ -70,6 +71,10 @@ function update_positions_with_pbcs!(parameters, arrays, output)
     N = parameters.N
     Lx, Ly = parameters.box.box_sizes
     pbc_layer_depth = parameters.periodic_boundary_layer_depth
+
+    # if pbc_layer_depth > min(Lx, Ly)/2
+    #     error("pbc_layer_depth must be less than half the box size in both dimensions (Lx=$Lx, Ly=$Ly), but is D_pbc=$pbc_layer_depth")
+    # end
     # add positions for to arrays.positions for pbcs
     # only considering a layer of particles with depth D_pbc
     N_particles = 0
@@ -133,7 +138,7 @@ function update_positions_with_pbcs!(parameters, arrays, output)
 end
 
 """
-    voronoi_tesselation!(parameters, arrays, output)
+    voronoi_tessellation!(parameters, arrays, output)
 
 Performs a full Voronoi tessellation of the system based on current particle positions.
 This function orchestrates several steps to compute the Voronoi diagram, which is
@@ -160,15 +165,15 @@ The process involves:
 - This function heavily modifies the `arrays.neighborlist` structure in-place.
 - It relies on `Quickhull.jl` for the Delaunay triangulation and helper functions like `update_positions_with_pbcs!`, `circumcenter`, and `sort_indices_counter_clockwise`.
 """
-function voronoi_tesselation!(parameters, arrays, output)
+function voronoi_tessellation!(parameters, arrays, output)
     # println("Computing Voronoi tessellation... at step ", output.steps_done)
     update_positions_with_pbcs!(parameters, arrays, output)
     N_positions_with_pbc = arrays.neighborlist.N_positions_with_pbc
-    tri = @views Quickhull.delaunay(arrays.neighborlist.positions_with_pbc[1:N_positions_with_pbc])
-    delauney_facets = Quickhull.facets(tri)
+    tri = Quickhull.delaunay(@view arrays.neighborlist.positions_with_pbc[1:N_positions_with_pbc])
+    delaunay_facets = Quickhull.facets(tri)
 
-    update_voronoi_vertices!(parameters, arrays, output, delauney_facets)
-    output.N_voronoi_tesselations += 1
+    update_voronoi_vertices!(parameters, arrays, output, delaunay_facets)
+    output.N_voronoi_tessellations += 1
     return 
 end
 
@@ -181,14 +186,6 @@ Computes the squared Euclidean norm (also known as squared length or squared mag
 of a 2D vector `v`.
 
 For a vector `v = [v1, v2]`, this is calculated as `v1^2 + v2^2`.
-This is often used in computations where the actual distance (square root) is not
-needed, as it avoids a potentially costly square root operation.
-
-# Arguments
-- `v::SVector{2, T}`: The 2D input vector. `T` is its element type (e.g., `Float64`).
-
-# Returns
-- `::T`: The squared Euclidean norm of the vector `v`, equal to `v[1]^2 + v[2]^2`. The return type is the same as the element type of the input vector.
 """
 function norm2(v::SVector{2, T}) where T
     return v[1]^2 + v[2]^2
@@ -218,8 +215,7 @@ This function uses `norm2` which computes `ax^2 + ay^2` (squared length from ori
 - `SVector{2, Float64}`: The 2D coordinates `(ux, uy)` of the circumcenter. The coordinates are always returned as `Float64`, regardless of the input type `T`.
 
 # Notes
-- The function relies on `norm2(v)` to calculate the squared magnitude of vectors `a`, `b`, and `c` (from the origin), which are used in the circumcenter formula.
-- If the three points `a`, `b`, `c` are collinear, the denominator `D` will be zero, leading to `Inf` or `NaN` coordinates. This case is not explicitly handled here beyond the standard floating-point behavior.
+- If the three points `a`, `b`, `c` are collinear, the denominator `D` will be zero, leading to `Inf` or `NaN` coordinates. In such cases, a warning is issued, and a small random displacement is added to the points to avoid undefined behavior.
 """
 function circumcenter(a::SVector{2, T}, b::SVector{2, T}, c::SVector{2, T}) where T
     ax, ay = a
@@ -230,6 +226,15 @@ function circumcenter(a::SVector{2, T}, b::SVector{2, T}, c::SVector{2, T}) wher
     clength2 = norm2(c)
 
     D = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
+    if abs(D) < eps(T)
+        @show D
+        @show a, b, c
+        @warn "Points are collinear or too close together, circumcenter is undefined. You have really weird cells! Adding random displacement to save the simulations."
+        disp1 = rand(SVector{2, Float64}) * sqrt(eps(T))
+        disp2 = rand(SVector{2, Float64}) * sqrt(eps(T))
+        disp3 = rand(SVector{2, Float64}) * sqrt(eps(T))
+        return circumcenter(a + disp1, b + disp2, c + disp3)
+    end
     ux = 1/D*(alength2 * (by - cy) + blength2 * (cy - ay) + clength2 * (ay - by))
     uy = 1/D*(alength2 * (cx - bx) + blength2 * (ax - cx) + clength2 * (bx - ax))
 
@@ -237,7 +242,7 @@ function circumcenter(a::SVector{2, T}, b::SVector{2, T}, c::SVector{2, T}) wher
 end
 
 """
-    verify_tesselation(parameters, arrays, output)
+    verify_tessellation(parameters, arrays, output)
 
 Verifies the validity of the Voronoi tessellation by checking if all particles
 are correctly positioned with respect to the Delaunay facets of the tessellation.
@@ -252,23 +257,21 @@ the circumcircle of the triangle does not contain any other particle that is not
 # Notes
 - The function assumes that the Voronoi tessellation has already been computed and that the necessary fields in `arrays.neighborlist` are populated, including `delaunay_facet_triplets`, `positions_with_pbc`, and `voronoi_neighbors`.
 - The field arrays.neighborlist.positions_with_pbc is updated to include periodic boundary conditions.
-- If the flag `arrays.neighborlist.check_tesselation` is set to `false`, the function immediately returns `false`, indicating that tessellation verification is not required or has been disabled.
+- If the flag `arrays.neighborlist.check_tessellation` is set to `false`, the function immediately returns `false`, indicating that tessellation verification is not required or has been disabled.
 """
 function verify_tessellation(parameters, arrays, output)
     # test if we verify the tessellation
-    if !arrays.neighborlist.check_tesselation
+    if !arrays.neighborlist.check_tessellation
         return false
     end
 
     epsilon = 1e-9
-    indices_hash = hash(arrays.neighborlist.position_indices)
+    old_used = view(arrays.neighborlist.position_indices, 1:arrays.neighborlist.N_positions_with_pbc)
     update_positions_with_pbcs!(parameters, arrays, output)
-    if  indices_hash != hash(arrays.neighborlist.position_indices)
-        # new ghost particles may have been added, so we need to recompute the tessellation
+    new_used = view(arrays.neighborlist.position_indices, 1:arrays.neighborlist.N_positions_with_pbc)
+    hash(old_used) == hash(new_used) || return false  
 
-        return false
-    end
-    # println("hashes match, verifying tessellation...")
+    # new ghost particles may have been added, so we need to recompute the tessellation
 
     # Iterate through each pre-computed Delaunay facet triplet
     for triplet_index in 1:arrays.neighborlist.N_triplets#arrays.neighborlist.delaunay_facet_triplets
@@ -348,13 +351,21 @@ function  update_voronoi_vertices!(parameters, arrays, output, facets)
     return update_voronoi_vertices!(parameters, arrays, output)
 end
 
-"""
 
-"""
+function is_in_ghost_box(pos, box_sizes, pbc_layer_depth)
+    Lx, Ly = box_sizes
+    x, y = pos
+    if x < -pbc_layer_depth || x > Lx + pbc_layer_depth || y < -pbc_layer_depth || y > Ly + pbc_layer_depth
+        return false
+    end
+    return true
+end
+
+
 function  update_voronoi_vertices!(parameters, arrays, output)
-
+    box_sizes = parameters.box.box_sizes
     positions_with_pbc = arrays.neighborlist.positions_with_pbc
-
+    position_indices = arrays.neighborlist.position_indices
     N_voronoi_neighbors_pp = arrays.neighborlist.N_voronoi_neighbors_pp
     N_voronoi_vertices_pp = arrays.neighborlist.N_voronoi_vertices_pp
     N_triplets = arrays.neighborlist.N_triplets
@@ -378,6 +389,20 @@ function  update_voronoi_vertices!(parameters, arrays, output)
         i = triplet[1]
         j = triplet[2]
         k = triplet[3]
+
+        # if any pair is primal and neighbouring an image of itself print and error
+
+
+        orig_i = position_indices[i]
+        orig_j = position_indices[j]
+        orig_k = position_indices[k]
+        
+        if (i == orig_i == orig_j) || (i == orig_i == orig_k) || (j == orig_j == orig_k) || (j == orig_j == orig_i) || (k == orig_k == orig_i) || (k == orig_k == orig_j) 
+            @warn "Triplet $triplet_index contains particles that are images of each other: $(position_indices[i]), $(position_indices[j]), $(position_indices[k]). Cells should not neighbor themselves!"
+            println("Positions: ", positions_with_pbc[i], positions_with_pbc[j], positions_with_pbc[k])
+            continue
+        end
+
 
         # add these to the voronoi neighborlist for every particle pair, checking if it is already filled
         @views if !(j in arrays.neighborlist.voronoi_neighbors[i][1:N_voronoi_neighbors_pp[i]])
@@ -417,30 +442,29 @@ function  update_voronoi_vertices!(parameters, arrays, output)
         push!(arrays.neighborlist.voronoi_vertices, voronoi_vertex_position)
         N_voronoi_vertices += 1
         # replace_or_push!(arrays.neighborlist.voronoi_vertices, voronoi_vertex_position, N_voronoi_vertices)
-        # # add the voronoi vertex to the voronoi vertices list
-        N_voronoi_vertices_pp[i] += 1
-        replace_or_push!(arrays.neighborlist.voronoi_vertex_indices[i], N_voronoi_vertices, N_voronoi_vertices_pp[i])
-        N_voronoi_vertices_pp[j] += 1
-        replace_or_push!(arrays.neighborlist.voronoi_vertex_indices[j], N_voronoi_vertices, N_voronoi_vertices_pp[j])
-        N_voronoi_vertices_pp[k] += 1
-        replace_or_push!(arrays.neighborlist.voronoi_vertex_indices[k], N_voronoi_vertices, N_voronoi_vertices_pp[k])
+        # # add the voronoi vertex to the voronoi vertices list only if it falls within the extended box
+        if is_in_ghost_box(voronoi_vertex_position, box_sizes, parameters.periodic_boundary_layer_depth)
+  
+            N_voronoi_vertices_pp[i] += 1
+            replace_or_push!(arrays.neighborlist.voronoi_vertex_indices[i], N_voronoi_vertices, N_voronoi_vertices_pp[i])
+            N_voronoi_vertices_pp[j] += 1
+            replace_or_push!(arrays.neighborlist.voronoi_vertex_indices[j], N_voronoi_vertices, N_voronoi_vertices_pp[j])
+            N_voronoi_vertices_pp[k] += 1
+            replace_or_push!(arrays.neighborlist.voronoi_vertex_indices[k], N_voronoi_vertices, N_voronoi_vertices_pp[k])
+        end
     end
 
 
 
     for particle in 1:N_positions_with_pbc
         # sort the voronoi vertex indices counterclockwise
-        sort_indices_counter_clockwise!(arrays.neighborlist, particle)
-        # replace the voronoi vertex indices with the new ones
-        # arrays.neighborlist.voronoi_vertex_indices[particle] = voronoi_vertex_indices_new
-        # N_vertices_particle = N_voronoi_vertices_pp[particle]
-        # @assert length(arrays.neighborlist.voronoi_vertex_indices[particle]) == N_vertices_particle "voronoi_vertex_indices for particle $particle should have length $N_vertices_particle, but has length $(length(arrays.neighborlist.voronoi_vertex_indices[particle]))"
+        sort_indices_counter_clockwise!(arrays.neighborlist, particle, box_sizes)
     end
 end
 
 
 """
-    sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertices, voronoi_center, Lx, Ly)
+    function sort_indices_counter_clockwise!(neighborlist, particle)
 
 Sorts the Voronoi vertex indices and their corresponding positions for a specific
 particle's Voronoi cell in a counter-clockwise (CCW) order around the cell's center.
@@ -451,18 +475,10 @@ The `atan(dy, dx)` function is used to get angles in the range `(-π, π]`, whic
 naturally provides an ordering for CCW sorting.
 
 # Arguments
-- `voronoi_vertex_indices::Vector{Int}`: A vector of integer indices pointing to the global `voronoi_vertices` list. These are the vertices associated with the specific particle's cell before sorting.
-- `voronoi_vertices::Vector{SVector{2, Float64}}`: The global list containing the 2D positions of all Voronoi vertices in the system. The indices in `voronoi_vertex_indices` refer to this list.
-- `voronoi_center::SVector{2, Float64}`: The 2D position of the center of the Voronoi cell, which is the position of the particle itself. This is the reference point for angle calculations.
-- `Lx::Float64`: The width of the simulation box. Currently unused in this function.
-- `Ly::Float64`: The height of the simulation box. Currently unused in this function.
-
-# Returns
-- `Tuple{Vector{Int}, Vector{SVector{2, Float64}}}`: A tuple containing two new vectors:
-    1.  The sorted `voronoi_vertex_indices` for the particle's cell, ordered counter-clockwise.
+- `neighborlist`: The `NeighborList` struct containing Voronoi data, including vertex indices and positions.
+- `particle::Int`: The index of the particle whose Voronoi cell vertices are to be sorted.
 """
-# function sort_indices_counter_clockwise(voronoi_vertex_indices, voronoi_vertices, voronoi_center)
-function sort_indices_counter_clockwise!(neighborlist, particle)
+function sort_indices_counter_clockwise!(neighborlist, particle, box_sizes)
     N_vertices_particle = neighborlist.N_voronoi_vertices_pp[particle]
     if N_vertices_particle == 0
         return # nothing to sort
@@ -481,10 +497,13 @@ function sort_indices_counter_clockwise!(neighborlist, particle)
     voronoi_vertices_mat = reinterpret(reshape, Float64, voronoi_vertices)
     vor_center_x = voronoi_center[1]
     vor_center_y = voronoi_center[2]
+    Lx, Ly = box_sizes
     @turbo for i in 1:N_vertices_particle
         voronoi_vertex_index = voronoi_vertex_indices[i]
         dx = voronoi_vertices_mat[1, voronoi_vertex_index] - vor_center_x
         dy = voronoi_vertices_mat[2, voronoi_vertex_index] - vor_center_y
+        dx -= round(dx / Lx) * Lx # probably not necessary, but safe to do
+        dy -= round(dy / Ly) * Ly
         angle = atan(dy, dx)
         angles[i] = angle
     end

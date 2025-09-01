@@ -55,15 +55,15 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
 
     # This function creates a callback that will be called during the simulation
     # It will visualize the simulation at each step
-    N = length(arrays.positions)
-    energy_list = Observable(Float64[])
-    mean_squared_displacement_list = Observable(Float64[])
-    mean_quartic_displacement_list = Observable(Float64[])
-    displacement_array = [SVector{2, Float64}(0.0, 0.0) for _ in 1:N]
-    previous_positions = copy(arrays.positions)
-    t_array = @lift dt*eachindex($energy_list)
+    # N = length(arrays.positions)
+    # energy_list = Observable(Float64[])
+    # mean_squared_displacement_list = Observable(Float64[])
+    # mean_quartic_displacement_list = Observable(Float64[])
+    # displacement_array = [SVector{2, Float64}(0.0, 0.0) for _ in 1:N]
+    previous_positions = copy(arrays.neighborlist.positions_with_pbc)
+    # t_array = @lift dt*eachindex($energy_list)
     plot_positions = Observable(SVector{2, Float64}[])
-    for i in 1:N
+    for i in 1:arrays.neighborlist.N_positions_with_pbc
         push!(plot_positions.val, previous_positions[i])
     end
 
@@ -87,10 +87,10 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
 
     Lx, Ly = box.box_sizes
 
-    fig = Figure(size=(1000,500))
-    ax1 = Axis(fig[1:3, 1], title="configuration", limits=(0, Lx, 0, Ly), xlabel="x", ylabel="y")
+    fig = Figure(size=(1000,1000))
+    ax1 = Axis(fig[1:3, 1], title="configuration", limits=(-5, Lx+5, -5, Ly+5), xlabel="x", ylabel="y")
     scatter!(ax1, plot_positions, markersize=12, color =:blue)
-    linesegments!(ax1, plot_voronoi_edges, color=:black)
+    linesegments!(ax1, plot_voronoi_edges, color=:black, linewidth=0.5)
 
     linesegments!(ax1, [
         (0, 0), (Lx, 0),
@@ -99,113 +99,134 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
         (0, Ly), (0, 0)
     ], color=:black, linewidth=4)
     
-    max_energy = @lift(
-        if isempty($energy_list)
-            1.0
-        else
-            maximum($energy_list)*1.1
-        end
-    )
+    # max_energy = @lift(
+    #     if isempty($energy_list)
+    #         1.0
+    #     else
+    #         maximum($energy_list)*1.1
+    #     end
+    # )
 
-    min_energy = @lift(
-        if isempty($energy_list)
-            0.0
-        else
-            minimum($energy_list)*0.9
-        end
-        )
+    # min_energy = @lift(
+    #     if isempty($energy_list)
+    #         0.0
+    #     else
+    #         minimum($energy_list)*0.9
+    #     end
+    #     )
 
 
-    xmax_energy = @lift(
-        if isempty($t_array)
-            1.0
-        else
-            maximum($t_array)
-        end
-    )
-    ax2 = Axis(fig[1, 2], title="energy", ylabel="energy", xlabel="t", limits=@lift((0, $xmax_energy, $min_energy, $max_energy)))
-    lines!(ax2, t_array, energy_list, color=:blue)
+    # xmax_energy = @lift(
+    #     if isempty($t_array)
+    #         1.0
+    #     else
+    #         maximum($t_array)
+    #     end
+    # )
+    # ax2 = Axis(fig[1, 2], title="energy", ylabel="energy", xlabel="t", limits=@lift((0, $xmax_energy, $min_energy, $max_energy)))
+    # lines!(ax2, t_array, energy_list, color=:blue)
 
-    tmin = dt
-    tmax = @lift(
-        if isempty($t_array)
-            2dt
-        else
-            maximum($t_array)
-        end
-    )
-    ymin = @lift(
-        if isempty($mean_squared_displacement_list)
-            1e-6
-        else
-            minimum($mean_squared_displacement_list)*0.9
-        end
-    )
-    ymax = @lift(
-        if isempty($mean_squared_displacement_list)
-            1e2
-        else
-            maximum($mean_squared_displacement_list)*1.1
-        end
-    )
+    # tmin = dt
+    # tmax = @lift(
+    #     if isempty($t_array)
+    #         2dt
+    #     else
+    #         maximum($t_array)
+    #     end
+    # )
+    # ymin = @lift(
+    #     if isempty($mean_squared_displacement_list)
+    #         1e-6
+    #     else
+    #         minimum($mean_squared_displacement_list)*0.9
+    #     end
+    # )
+    # ymax = @lift(
+    #     if isempty($mean_squared_displacement_list)
+    #         1e2
+    #     else
+    #         maximum($mean_squared_displacement_list)*1.1
+    #     end
+    # )
 
-    ax4 = Axis(fig[2, 2], title="msd", ylabel="msd", xlabel="t", yscale=log10, xscale=log10, limits=@lift(($tmin, $tmax, $ymin, $ymax)))
-    lines!(ax4, @lift($t_array[2:end]), mean_squared_displacement_list, color=:blue, label="msd")
-    display(fig)
-    α2 = @lift 0.5 * ($mean_quartic_displacement_list ./ $mean_squared_displacement_list .^ 2) .- 1
-    ax3 = Axis(fig[3, 2], title="α2", ylabel="α2", xlabel="t", xscale=log10, limits=(0.01, 1000.0, -1.0, 1.0))
-    lines!(ax3, @lift($t_array[2:end]), α2, color=:blue, label="α2")
+    # ax4 = Axis(fig[2, 2], title="msd", ylabel="msd", xlabel="t", yscale=log10, xscale=log10, limits=@lift(($tmin, $tmax, $ymin, $ymax)))
+    # lines!(ax4, @lift($t_array[2:end]), mean_squared_displacement_list, color=:blue, label="msd")
+    # display(fig)
+    # α2 = @lift 0.5 * ($mean_quartic_displacement_list ./ $mean_squared_displacement_list .^ 2) .- 1
+    # ax3 = Axis(fig[3, 2], title="α2", ylabel="α2", xlabel="t", xscale=log10, limits=(0.01, 1000.0, -1.0, 1.0))
+    # lines!(ax3, @lift($t_array[2:end]), α2, color=:blue, label="α2")
 
     display(fig)
 
     function visualize(parameters, arrays, output)
-        push!(energy_list[], SelfPropelledVoronoi.compute_energy(parameters, arrays, output))
+        # push!(energy_list[], SelfPropelledVoronoi.compute_energy(parameters, arrays, output))
 
         # apply periodic boundary conditions
-        if !(length(energy_list[]) == 1) # no movement yet
+        # if !(length(energy_list[]) == 1) # no movement yet
 
-            dr = arrays.positions .- previous_positions
-            apply_periodic_boundary_conditions!(dr, parameters.box.box_sizes) 
-            displacement_array .+= dr
-            push!(mean_squared_displacement_list[], compute_msd(displacement_array))
-            push!(mean_quartic_displacement_list[], compute_mqd(displacement_array))
-        end
+            # dr = arrays.positions .- previous_positions
+            # apply_periodic_boundary_conditions!(dr, parameters.box.box_sizes) 
+            # displacement_array .+= dr
+            # push!(mean_squared_displacement_list[], compute_msd(displacement_array))
+            # push!(mean_quartic_displacement_list[], compute_mqd(displacement_array))
+        # end
 
-        α2new = 0.5 * (mean_quartic_displacement_list[] ./ mean_squared_displacement_list[] .^ 2) .- 1
-        α2.val = α2new
-        previous_positions .= arrays.positions
+        # α2new = 0.5 * (mean_quartic_displacement_list[] ./ mean_squared_displacement_list[] .^ 2) .- 1
+        # α2.val = α2new
+        # previous_positions .= arrays.positions
+        # resize!(plot_positions[], length(arrays.neighborlist.N_positions_with_pbc))
+        # for i in 1:length(arrays.neighborlist.N_positions_with_pbc)
+        #     previous_positions[i] = arrays.neighborlist.positions_with_pbc[i]
+        # end
+        # empty!(plot_positions.val)
+        # resize!(plot_positions.val, 0)
+        # for i in 1:parameters.N
+        #     push!(plot_positions.val, arrays.neighborlist.positions_with_pbc[i])
+        # end
+
+        
         if !(output.steps_done % plot_frequency == 0) 
             return
         end
 
         if SelfPropelledVoronoi.verify_tessellation(parameters, arrays, output) == false
-            SelfPropelledVoronoi.voronoi_tesselation!(parameters, arrays, output)
+            SelfPropelledVoronoi.voronoi_tessellation!(parameters, arrays, output)
         end
 
         # visualize the initial configuration
         println("Visualizing step $(output.steps_done)")
 
-        energy_list[] = copy(energy_list[])
-        mean_squared_displacement_list[] = copy(mean_squared_displacement_list[])
+        # energy_list[] = copy(energy_list[])
+        # mean_squared_displacement_list[] = copy(mean_squared_displacement_list[])
 
-        plot_positions[] = SVector.(arrays.positions)
-
+        plot_positions[] = SVector.(arrays.neighborlist.positions_with_pbc[1:arrays.neighborlist.N_positions_with_pbc])
+        broken = false
         # draw voronoi edges
         linesegs2 = Tuple{SVector{2, Float64}, SVector{2, Float64}}[]
-        for particle_i in 1:length(arrays.positions)
-            indices = arrays.neighborlist.voronoi_vertex_indices[particle_i]
+        for particle_i in 1:arrays.neighborlist.N_positions_with_pbc
+            n_indices = arrays.neighborlist.N_voronoi_vertices_pp[particle_i]
+            indices = arrays.neighborlist.voronoi_vertex_indices[particle_i][1:n_indices]
             vor_positions = arrays.neighborlist.voronoi_vertices[indices]
-            for i in 1:length(indices)
-                j = i % length(indices) + 1
+            for i in 1:n_indices
+                j = i % n_indices + 1
                 posi = vor_positions[i]
                 posj = vor_positions[j]
                 # apply periodic boundary conditions
+                # if lineseg is longer than 4, print
+
+                # if sum((posi - posj).^2) > 4.0^2
+                #     # println("Long line segment detected: ", norm(posi - posj))
+                #     println("Wrong tessellation detected at step $(output.steps_done)")
+                #     broken = true
+                # end
 
                 push!(linesegs2, (posi, posj))
             end
         end
         plot_voronoi_edges[] = linesegs2
-        
+        # if broken
+        #     error("Wrong tessellation detected at step $(output.steps_done)")
+        # end
     end
 
     return (parameters, arrays, output) -> visualize(parameters, arrays, output)
@@ -216,13 +237,13 @@ rho = 1.0
 L = sqrt(N/rho)
 Lx = L
 Ly = L
-dt = 0.1
-pbc_layer_depth = 2.5
+dt = 0.01
+pbc_layer_depth = 3.5
 
 # Create a box
 box = SimulationBox(Lx, Ly)
 # Create a VoronoiCells object
-target_perimeters = 3.8*ones(N)
+target_perimeters = 3.5ones(N)
 target_areas = ones(N)
 K_P = ones(N)
 K_A = ones(N)
@@ -250,11 +271,10 @@ dump_info = DumpInfo(
 
 rng = Random.MersenneTwister(random_seed)
 verbose=true
-cb(x...) = nothing 
 parameter_struct = ParameterStruct(N = N, dt = dt, 
     kBT = kBT, frictionconstant = frictionconstant, 
     periodic_boundary_layer_depth = pbc_layer_depth, verbose = verbose, box = box, particles= voronoi_cells,
-    dump_info = dump_info, callback = cb, RNG = rng)
+    dump_info = dump_info, callback = (x...) -> nothing, RNG = rng)
 
 
 # Create an ArrayStruct object
@@ -266,14 +286,15 @@ arrays.positions .= [rand(SVector{2, Float64}) .* box.box_sizes for _ in 1:N]
 arrays.orientations .= 2π*rand(Float64, N) 
 
 
+
 # Create an Output object
 output = Output()
-arrays.neighborlist.check_tesselation = true
+arrays.neighborlist.check_tessellation = true
 # Run the simulation
 
-Nsteps = 1000 ÷ dt
+Nsteps = 10
 run_simulation!(parameter_struct, arrays, output, Nsteps)
-visualize = create_visualization_callback(arrays, 250, dt, box)
+visualize = create_visualization_callback(arrays, 100, dt, box)
 
 # with a visualization callback
 parameter_struct2 = ParameterStruct(N = N, dt = dt, 
@@ -281,7 +302,7 @@ parameter_struct2 = ParameterStruct(N = N, dt = dt,
     periodic_boundary_layer_depth = pbc_layer_depth, verbose = verbose, box = box, particles= voronoi_cells,
     dump_info = dump_info, callback = visualize, RNG = rng)
 
-Nsteps = 10000 ÷ dt
+Nsteps = 100000
 @profview @time  run_simulation!(parameter_struct2, arrays, output, Nsteps) # 4.54 - 4.73 seconds (35.37 M allocations: 2.616 GiB, 8.61% gc time)
 
 @show sum(arrays.positions) .- [4014.0155646974695, 4018.0113204639847]

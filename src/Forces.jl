@@ -51,8 +51,8 @@ The forces arise from deviations of cell areas and perimeters from their target 
 effectively modeling area and perimeter elasticity.
 
 The function first ensures the Voronoi tessellation is current by calling
-`verify_tesselation`. If the tessellation is not valid, it's updated by
-`voronoi_tesselation!` or `update_delauney_vertices!`. Subsequently, it calls
+`verify_tessellation`. If the tessellation is not valid, it's updated by
+`voronoi_tessellation!` or `update_delaunay_vertices!`. Subsequently, it calls
 `update_perimeters!` and `update_areas!` to ensure these geometric properties
 are current before force calculation.
 
@@ -70,7 +70,7 @@ with respect to particle positions.
     - `arrays.areas`: Current areas of Voronoi cells (read after being updated by `update_areas!`).
     - `arrays.perimeters`: Current perimeters of Voronoi cells (read after being updated by `update_perimeters!`).
     - `arrays.forces`: A vector of `SVector{2, Float64}` where the computed force for each particle will be stored. This array is modified in-place.
-- `output::Output`: The simulation output struct. Passed to helper functions like `voronoi_tesselation!`, `update_perimeters!`, etc.
+- `output::Output`: The simulation output struct. Passed to helper functions like `voronoi_tessellation!`, `update_perimeters!`, etc.
 
 # Notes
 - The function modifies `arrays.forces` in-place with the newly computed forces.
@@ -85,7 +85,7 @@ function compute_forces_SPV!(parameters, arrays, output)
     N_vertices_pp = arrays.neighborlist.N_voronoi_vertices_pp
 
     if verify_tessellation(parameters, arrays, output) == false
-        voronoi_tesselation!(parameters, arrays, output)
+        voronoi_tessellation!(parameters, arrays, output)
     end
 
     compute_energy(parameters, arrays, output) # will also update areas and perims
@@ -201,10 +201,22 @@ function compute_forces_SPV!(parameters, arrays, output)
             # test if h_index and g_index are valid indices
             if @views !(voronoi_indices[particle_j][h_index] in voronoi_indices[particle_i][1:N_vertices_i] &&
                  voronoi_indices[particle_j][g_index] in voronoi_indices[particle_i][1:N_vertices_i])
-                @show particle_i, particle_j, h_index, g_index
-                @show voronoi_indices[particle_j][1:N_vertices_j]
-                @show voronoi_indices[particle_i][1:N_vertices_i]
-                error("Error: h_index and g_index should be valid indices in voronoi_indices[particle_i].  Consider increasing the periodic_boundary_layer_depth value.")
+
+                @warn("Error: h_index and g_index should be valid indices in voronoi_indices[particle_i].  Increasing the periodic_boundary_layer_depth value... The simulation may slow down")
+                if parameters.periodic_boundary_layer_depth >= minimum(parameters.box.box_sizes ./ 2)
+                    @show particle_i, particle_j, h_index, g_index
+                    @show arrays.neighborlist.positions_with_pbc[particle_i], arrays.neighborlist.positions_with_pbc[particle_j]
+                    @show voronoi_indices[particle_j][1:N_vertices_j]
+                    @show voronoi_vertices[voronoi_indices[particle_j][1:N_vertices_j]]
+                    @show voronoi_indices[particle_i][1:N_vertices_i]
+                    @show voronoi_vertices[voronoi_indices[particle_j][h_index]]
+                    @show voronoi_vertices[voronoi_indices[particle_j][g_index]]
+                    error("Error: periodic_boundary_layer_depth is already at maximum value. Cannot increase further.")
+                end
+                parameters.periodic_boundary_layer_depth = min(parameters.periodic_boundary_layer_depth * 1.1, minimum(parameters.box.box_sizes ./ 2))
+                voronoi_tessellation!(parameters, arrays, output)
+                println("Increased periodic_boundary_layer_depth to ", parameters.periodic_boundary_layer_depth)
+                return compute_forces_SPV!(parameters, arrays, output)
             end
             
 

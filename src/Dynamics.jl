@@ -228,7 +228,7 @@ end
 Runs the main simulation loop for a specified number of time steps.
 
 Before starting the loop, it performs an initial Voronoi tessellation by calling
-`voronoi_tesselation!(parameters, arrays, output)` to ensure the system's geometric
+`voronoi_tessellation!(parameters, arrays, output)` to ensure the system's geometric
 properties are up-to-date.
 
 The main loop then proceeds as follows for each step:
@@ -244,7 +244,7 @@ The main loop then proceeds as follows for each step:
     - `verbose::Bool`: Flag to enable/disable verbose output.
     - `dump_info::DumpInfo`: Contains parameters for saving simulation data, including `save` (flag), `when_to_save_array` (steps for saving).
     - `callback`: A user-defined function called at each step.
-- `arrays::ArrayStruct`: The struct holding simulation arrays (positions, forces, orientations, etc.). This is modified in-place by the functions called within the loop (e.g., `do_time_step`, `voronoi_tesselation!`).
+- `arrays::ArrayStruct`: The struct holding simulation arrays (positions, forces, orientations, etc.). This is modified in-place by the functions called within the loop (e.g., `do_time_step`, `voronoi_tessellation!`).
 - `output::Output`: The simulation output struct.
     - `output.steps_done`: Used to initialize the local `step` counter and is updated at each iteration. It is also passed to and modified by functions called within the loop.
 - `N_steps::Int`: The total number of time steps to run the simulation.
@@ -256,7 +256,7 @@ The main loop then proceeds as follows for each step:
 function run_simulation!(parameters, arrays, output, N_steps)
     step = output.steps_done
     start_step = step
-    voronoi_tesselation!(parameters, arrays, output)
+    voronoi_tessellation!(parameters, arrays, output)
     print_arr = when_to_print_array(N_steps + start_step + 10)
     # Main simulation loop
     t0 = time()

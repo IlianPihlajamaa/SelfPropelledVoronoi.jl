@@ -13,7 +13,7 @@ for file in [
     "Dump.jl",
     "Load.jl",
     "Forces.jl",
-    "Tesselation.jl",
+    "Tessellation.jl",
     "Dynamics.jl", 
     "Visualize.jl",    ] 
     

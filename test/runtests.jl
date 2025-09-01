@@ -28,7 +28,7 @@ end
 
 
 include("test_forces.jl")
-include("test_tesselation.jl")
+include("test_tessellation.jl")
 include("test_loading_and_saving.jl")
               
               

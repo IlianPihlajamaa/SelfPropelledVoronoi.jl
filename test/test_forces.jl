@@ -120,19 +120,19 @@ function compute_forces_finite_difference(particle_index::Int, parameters::Param
     original_pos = copy(arrays.positions[particle_index])
     
     # Calculate E0 (energy at original position)
-    # SelfPropelledVoronoi.voronoi_tesselation!(parameters, arrays, output) # Ensure tesselation is up-to-date
+    # SelfPropelledVoronoi.voronoi_tessellation!(parameters, arrays, output) # Ensure tessellation is up-to-date
     # E0 = SelfPropelledVoronoi.compute_energy(parameters, arrays, output) # This function is in example/test.jl, need to make it accessible
 
     # To make compute_energy accessible, we should move it to a source file, e.g. src/AuxiliaryFunctions.jl
     # For now, let's assume it's accessible as SelfPropelledVoronoi.compute_energy
 
     # --- Potential Energy Function ---
-    # This is a simplified view, actual energy computation might involve updating tesselation
+    # This is a simplified view, actual energy computation might involve updating tessellation
     function potential_energy(current_arrays::ArrayStruct)
-        # Critical: Ensure that any change in particle position leads to a re-tesselation 
-        # before energy calculation if the energy depends on the tesselation.
+        # Critical: Ensure that any change in particle position leads to a re-tessellation 
+        # before energy calculation if the energy depends on the tessellation.
         temp_arrays = deepcopy(current_arrays) # Use a deepcopy to avoid modifying the original arrays during probing
-        SelfPropelledVoronoi.voronoi_tesselation!(parameters, temp_arrays, output) # Re-tesselate based on potentially modified positions
+        SelfPropelledVoronoi.voronoi_tessellation!(parameters, temp_arrays, output) # Re-tesselate based on potentially modified positions
         
         # Call the exported compute_energy function
         return SelfPropelledVoronoi.compute_energy(parameters, temp_arrays, output)
@@ -167,8 +167,8 @@ function compute_forces_finite_difference(particle_index::Int, parameters::Param
     arrays.positions[particle_index] = original_pos
     # It's important to also restore the state of arrays.areas and arrays.perimeters 
     # if they were changed by potential_energy function calls.
-    # A final tesselation ensures the main simulation state is correct.
-    SelfPropelledVoronoi.voronoi_tesselation!(parameters, arrays, output)
+    # A final tessellation ensures the main simulation state is correct.
+    SelfPropelledVoronoi.voronoi_tessellation!(parameters, arrays, output)
 
 
     return SVector(Fx, Fy)
@@ -273,8 +273,8 @@ using StaticArrays
     # Create Output object
     output = Output()
 
-    # Perform initial Voronoi tesselation
-    SelfPropelledVoronoi.voronoi_tesselation!(parameter_struct, arrays, output)
+    # Perform initial Voronoi tessellation
+    SelfPropelledVoronoi.voronoi_tessellation!(parameter_struct, arrays, output)
 
     # Define a small epsilon for finite differencing
     epsilon = sqrt(eps(Float64)) # Use square root of machine epsilon for better precision
@@ -294,14 +294,14 @@ using StaticArrays
         # Ensure arrays.positions is not modified by compute_forces_finite_difference before this call for particle i
         # The compute_forces_finite_difference function should ideally use a deepcopy of arrays internally if it modifies positions for calculation
         # or ensure it restores the state perfectly. Given its current structure, it restores the specific particle's position.
-        # However, the global 'arrays' state (like areas, perimeters updated by tesselation) might be affected by intermediate steps.
+        # However, the global 'arrays' state (like areas, perimeters updated by tessellation) might be affected by intermediate steps.
         # For a clean test, it's best if compute_forces_finite_difference takes a 'clean' arrays state or deepcopies appropriately.
         # For now, we proceed assuming compute_forces_finite_difference handles its state changes correctly and restores.
         
-        # Re-calculate tesselation before finite difference to ensure a clean state for energy calculation baseline
+        # Re-calculate tessellation before finite difference to ensure a clean state for energy calculation baseline
         # This is important if the main SPV force calculation modified shared state like 'output' or 'arrays' in ways
         # that compute_forces_finite_difference doesn't fully reset for its own baseline energy calculation.
-        # SelfPropelledVoronoi.voronoi_tesselation!(parameter_struct, arrays, output) # This might be redundant if compute_forces_finite_difference does it.
+        # SelfPropelledVoronoi.voronoi_tessellation!(parameter_struct, arrays, output) # This might be redundant if compute_forces_finite_difference does it.
 
         F_fd = compute_forces_finite_difference(i, parameter_struct, arrays, output, epsilon)
 
@@ -359,7 +359,7 @@ end
     # Create Output object
     output_gcm = Output()
 
-    # Note: No initial Voronoi tesselation needed for GCM
+    # Note: No initial Voronoi tessellation needed for GCM
 
     # Define a small epsilon for finite differencing
     epsilon_gcm = 1e-7

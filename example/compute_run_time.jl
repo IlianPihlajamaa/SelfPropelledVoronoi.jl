@@ -179,7 +179,7 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
         end
 
         if SelfPropelledVoronoi.verify_tessellation(parameters, arrays, output) == false
-            SelfPropelledVoronoi.voronoi_tesselation!(parameters, arrays, output)
+            SelfPropelledVoronoi.voronoi_tessellation!(parameters, arrays, output)
         end
 
         # visualize the initial configuration
@@ -221,12 +221,12 @@ for  Nappr = 10 .^ logN
     Lx = L
     Ly = L
     dt = 0.05
-    pbc_layer_depth = 2.5
+    pbc_layer_depth = L
 
     # Create a box
     box = SimulationBox(Lx, Ly)
     # Create a VoronoiCells object
-    target_perimeters = 3.8*ones(N)
+    target_perimeters = 4.8*ones(N)
     target_areas = ones(N)
     K_P = ones(N)
     K_A = ones(N)
@@ -271,7 +271,7 @@ for  Nappr = 10 .^ logN
 
     # Create an Output object
     output = Output()
-    arrays.neighborlist.check_tesselation = true
+    arrays.neighborlist.check_tessellation = true
     # Run the simulation
 
     Nsteps = 100 ÷ dt
@@ -280,7 +280,7 @@ for  Nappr = 10 .^ logN
     trun_per_step = trun / Nsteps
     push!(run_times, trun_per_step)
     println("Run time for N = $N: ", trun_per_step, " seconds per step")
-    @show output.N_voronoi_tesselations
+    @show output.N_voronoi_tessellations
 end
 
 fig = Figure(size=(600, 400))

@@ -95,7 +95,7 @@ function load_simulation_state(filename::String)
         output_struct = Output()
         output_struct.potential_energy = potential_energy
         output_struct.steps_done = latest_step
-        output_struct.N_voronoi_tesselations = 0 # Not saved, default to 0
+        output_struct.N_voronoi_tessellations = 0 # Not saved, default to 0
 
         return parameter_struct, array_struct, output_struct
     end

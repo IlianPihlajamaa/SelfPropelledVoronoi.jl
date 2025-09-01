@@ -52,8 +52,8 @@ end
     NeighborList
 A structure to hold the neighbor list and Voronoi edges for each particle.
 The `neighbors` field is a vector of vectors, where each inner vector contains the indices of the neighboring particles for each particle.
-The `voronoi_vertices` field is a vector of vectors, where each inner vector contains the index of the Voronoi vertices for each particle. The coordinates are accessed by `delauney_circumcenters` and are stored in counterclockwise order
-The `delauney_circumcenters` field is a vector of vectors, where each inner vector contains the coordinates of the Delauney circumcenters for each particle. The Delauney circumcenters are represented as `SVector{2, Float64}`.
+The `voronoi_vertices` field is a vector of vectors, where each inner vector contains the index of the Voronoi vertices for each particle. The coordinates are accessed by `delaunay_circumcenters` and are stored in counterclockwise order
+The `delaunay_circumcenters` field is a vector of vectors, where each inner vector contains the coordinates of the Delaunay circumcenters for each particle. The Delaunay circumcenters are represented as `SVector{2, Float64}`.
 """
 mutable struct VoronoiNeighborList
     voronoi_neighbors::Vector{Vector{Int64}}            # List of Voronoi neighbors for each particle
@@ -70,7 +70,7 @@ mutable struct VoronoiNeighborList
     temp_buffer1::Vector{Int64} # Temporary buffer for storing indices during computations
     temp_buffer2::Vector{Int64} # Temporary buffer for storing indices during computations
     temp_buffer3::Vector{Float64} # Temporary buffer for storing distances during computations
-    check_tesselation::Bool # Flag which controls whether tesselation is checked or if tesselation 
+    check_tessellation::Bool # Flag which controls whether tessellation is checked or if tessellation 
                 # is performed every time step regardless of its validity. For debugging. Set to true for performance.
     VoronoiNeighborList() = new(
         Vector{Vector{Int64}}(),
@@ -142,12 +142,12 @@ A mutable struct that stores various simulation output quantities. These quantit
 # Fields
 - `potential_energy::Float64`: The total potential energy of the system at the current state.
 - `steps_done::Int64`: The number of simulation time steps that have been completed.
-- `N_voronoi_tesselations::Int64`: The total number of Voronoi tesselations that have been performed during the simulation.
+- `N_voronoi_tessellations::Int64`: The total number of Voronoi tessellations that have been performed during the simulation.
 """
 mutable struct Output
     potential_energy::Float64
     steps_done::Int64
-    N_voronoi_tesselations::Int64
+    N_voronoi_tessellations::Int64
     Output() = new(
         0.0,
         0,
@@ -254,7 +254,7 @@ Type parameters:
 - `callback::CB`: A callback function (of type `CB`) that can be executed at specified intervals during the simulation (e.g., for custom analysis or logging).
 - `RNG::Random.MersenneTwister`: An instance of a random number generator (specifically `MersenneTwister`) used for stochastic processes in the simulation.
 """
-struct ParameterStruct{P<:Particles, CB}
+mutable struct ParameterStruct{P<:Particles, CB}
     N::Int
     dt::Float64
     kBT::Float64

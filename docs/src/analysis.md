@@ -73,7 +73,7 @@ arrays.orientations .= 2π*rand(Float64, N)
 
 # Create an Output object
 output = Output()
-arrays.neighborlist.check_tesselation = true
+arrays.neighborlist.check_tessellation = true
 
 # Run the simulation
 Nsteps = 10000
