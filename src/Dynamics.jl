@@ -261,7 +261,9 @@ function run_simulation!(parameters, arrays, output, N_steps)
     # Main simulation loop
     t0 = time()
 
-    first_dump_step = parameters.dump_info.when_to_save_array[1]
+    # Determine the first dump step for new file generation
+    first_dump_step_idx = findfirst(x -> x >= start_step, parameters.dump_info.when_to_save_array)
+    first_dump_step = ifelse(isnothing(first_dump_step_idx), -1, parameters.dump_info.when_to_save_array[first_dump_step_idx]) 
 
     while true
 
