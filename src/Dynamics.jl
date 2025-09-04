@@ -261,7 +261,7 @@ function run_simulation!(parameters, arrays, output, N_steps)
     # Main simulation loop
     t0 = time()
 
-
+    first_dump_step = parameters.dump_info.when_to_save_array[1]
 
     while true
 
@@ -272,7 +272,7 @@ function run_simulation!(parameters, arrays, output, N_steps)
         # Check if the simulation should be saved
         if parameters.dump_info.save
             if step in parameters.dump_info.when_to_save_array
-                save_simulation_state!(parameters, arrays, output; needs_newfile=start_step==step)
+                save_simulation_state!(parameters, arrays, output; needs_newfile=first_dump_step==step)
             end
         end
 
