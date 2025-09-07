@@ -20,8 +20,8 @@ function test_circumcenter_derivative()
     h_minus_dx = SelfPropelledVoronoi.circumcenter(r1_minus_dx, r2, r3)
     dhx_dr1x = (h_plus_dx[1] - h_minus_dx[1]) / (2 * 1e-6)
     dhy_dr1x = (h_plus_dx[2] - h_minus_dx[2]) / (2 * 1e-6)
-    @test dhx_dr1x ≈ dhxdr1x atol=1e-5
-    @test dhy_dr1x ≈ dhydr1x atol=1e-5
+    @test dhx_dr1x ≈ dhxdr1x rtol=1e-5
+    @test dhy_dr1x ≈ dhydr1x rtol=1e-5
     r1_plus_dy = r1 + SVector(0.0, 1e-6)
     h_plus_dy = SelfPropelledVoronoi.circumcenter(r1_plus_dy, r2, r3)
     r1_minus_dy = r1 - SVector(0.0, 1e-6)
