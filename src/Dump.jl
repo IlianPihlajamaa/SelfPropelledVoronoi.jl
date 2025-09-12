@@ -77,11 +77,12 @@ function save_simulation_state!(parameters::ParameterStruct, arrays::ArrayStruct
             HDF5.h5open(filename, "w") do file_handle
                 # Save Parameters
                 params_g = HDF5.create_group(file_handle, "parameters")
-                params_g["N"] = parameters.N
-                params_g["dt"] = parameters.dt
-                params_g["kBT"] = parameters.kBT
-                params_g["frictionconstant"] = parameters.frictionconstant
-                params_g["periodic_boundary_layer_depth"] = parameters.periodic_boundary_layer_depth
+                for name in fieldnames(typeof(parameters))
+                    val = getfield(parameters, name)
+                    if val isa Number || val isa AbstractString || val isa Bool
+                        params_g[string(name)] = val
+                    end
+                end
                 # Assuming parameters.box.box_sizes is an SVector or similar directly writable by HDF5.jl
 
                 params_g["box_sizes"] = collect(parameters.box.box_sizes)

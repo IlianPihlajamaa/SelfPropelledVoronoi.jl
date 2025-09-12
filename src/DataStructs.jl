@@ -253,6 +253,7 @@ Type parameters:
 - `dump_info::DumpInfo`: A `DumpInfo` struct containing parameters for controlling how simulation data is saved to files.
 - `callback::CB`: A callback function (of type `CB`) that can be executed at specified intervals during the simulation (e.g., for custom analysis or logging).
 - `RNG::Random.MersenneTwister`: An instance of a random number generator (specifically `MersenneTwister`) used for stochastic processes in the simulation.
+- `seed::Int64`: The seed value used to initialize the random number generator, stored for reproducibility.
 """
 mutable struct ParameterStruct{P<:Particles, CB}
     N::Int
@@ -266,6 +267,7 @@ mutable struct ParameterStruct{P<:Particles, CB}
     dump_info::DumpInfo
     callback::CB
     RNG::Random.MersenneTwister
+    seed::Int64
     function ParameterStruct(;
         N::Int=100,
         dt::Float64=0.01,
@@ -284,7 +286,7 @@ mutable struct ParameterStruct{P<:Particles, CB}
         ),
         dump_info::DumpInfo=DumpInfo(),
         callback=x->nothing,  # Default callback does nothing
-        RNG::Random.MersenneTwister=Random.MersenneTwister(1234)
+        RNG::Random.MersenneTwister=Random.MersenneTwister(1234),
     ) 
         return new{typeof(particles), typeof(callback)}(
             N,
@@ -297,7 +299,8 @@ mutable struct ParameterStruct{P<:Particles, CB}
             particles,
             dump_info,
             callback,
-            RNG
+            RNG, 
+            Int(RNG.seed)
         )
     end
         
