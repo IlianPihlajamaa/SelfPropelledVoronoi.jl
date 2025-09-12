@@ -201,22 +201,52 @@ function compute_forces_SPV!(parameters, arrays, output)
             # test if h_index and g_index are valid indices
             if @views !(voronoi_indices[particle_j][h_index] in voronoi_indices[particle_i][1:N_vertices_i] &&
                  voronoi_indices[particle_j][g_index] in voronoi_indices[particle_i][1:N_vertices_i])
+                
+                # two options: either the periodic boundary layer depth is too small,
+                # or we are at a T1 transition, and there is an inconsistency in the CCW sorting
 
-                @warn("Error: h_index and g_index should be valid indices in voronoi_indices[particle_i].  Increasing the periodic_boundary_layer_depth value... The simulation may slow down")
-                if parameters.periodic_boundary_layer_depth >= minimum(parameters.box.box_sizes ./ 2)
-                    @show particle_i, particle_j, h_index, g_index
-                    @show arrays.neighborlist.positions_with_pbc[particle_i], arrays.neighborlist.positions_with_pbc[particle_j]
-                    @show voronoi_indices[particle_j][1:N_vertices_j]
-                    @show voronoi_vertices[voronoi_indices[particle_j][1:N_vertices_j]]
-                    @show voronoi_indices[particle_i][1:N_vertices_i]
-                    @show voronoi_vertices[voronoi_indices[particle_j][h_index]]
-                    @show voronoi_vertices[voronoi_indices[particle_j][g_index]]
-                    error("Error: periodic_boundary_layer_depth is already at maximum value. Cannot increase further.")
+                # for the second case, we have nothing to worry, because even though h and g are not in the voronoi indices of i, the corresponding g and h of i will be at the same locations.
+                
+                # To check, we first find which is the offending index, (h or g), and when found, we check if there is a vertex in the voronoi indices of i that is very close to it (within 1e-6)
+
+                offending_index = 0
+                if @views !(voronoi_indices[particle_j][h_index] in voronoi_indices[particle_i][1:N_vertices_i])
+                    offending_index = h_index
+                elseif @views !(voronoi_indices[particle_j][g_index] in voronoi_indices[particle_i][1:N_vertices_i])
+                    offending_index = g_index
                 end
-                parameters.periodic_boundary_layer_depth = min(parameters.periodic_boundary_layer_depth * 1.1, minimum(parameters.box.box_sizes ./ 2))
-                voronoi_tessellation!(parameters, arrays, output)
-                println("Increased periodic_boundary_layer_depth to ", parameters.periodic_boundary_layer_depth)
-                return compute_forces_SPV!(parameters, arrays, output)
+                offending_vertex = voronoi_vertices[voronoi_indices[particle_j][offending_index]]
+                found_close = false
+                for ii in 1:N_vertices_i
+                    vertex_i = voronoi_vertices[voronoi_indices[particle_i][ii]]
+                    dist = sqrt((vertex_i[1] - offending_vertex[1])^2 + (vertex_i[2] - offending_vertex[2])^2)
+                    if dist < 1e-6
+                        found_close = true
+                        break
+                    end
+                end
+                if found_close
+                    @warn "Found a scary T1 transition!"
+                    nothing
+                else
+                    # this is likely due to too small periodic boundary layer depth
+                    # we need to increase it and recompute the voronoi tessellation
+                    @warn("Error: h_index and g_index should be valid indices in voronoi_indices[particle_i].  Increasing the periodic_boundary_layer_depth value... The simulation may slow down")
+                    if parameters.periodic_boundary_layer_depth >= minimum(parameters.box.box_sizes ./ 2)
+                        @show particle_i, particle_j, h_index, g_index
+                        @show arrays.neighborlist.positions_with_pbc[particle_i], arrays.neighborlist.positions_with_pbc[particle_j]
+                        @show voronoi_indices[particle_j][1:N_vertices_j]
+                        @show voronoi_vertices[voronoi_indices[particle_j][1:N_vertices_j]]
+                        @show voronoi_indices[particle_i][1:N_vertices_i]
+                        @show voronoi_vertices[voronoi_indices[particle_j][h_index]]
+                        @show voronoi_vertices[voronoi_indices[particle_j][g_index]]
+                        error("Error: periodic_boundary_layer_depth is already at maximum value. Cannot increase further.")
+                    end
+                    parameters.periodic_boundary_layer_depth = min(parameters.periodic_boundary_layer_depth * 1.1, minimum(parameters.box.box_sizes ./ 2))
+                    voronoi_tessellation!(parameters, arrays, output)
+                    println("Increased periodic_boundary_layer_depth to ", parameters.periodic_boundary_layer_depth)
+                    return compute_forces_SPV!(parameters, arrays, output)
+                end
             end
             
 

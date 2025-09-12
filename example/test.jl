@@ -5,6 +5,7 @@ import Pkg; Pkg.activate("example")
 using Revise
 using SelfPropelledVoronoi, StaticArrays, Random
 using Statistics, BenchmarkTools, GLMakie
+import Quickhull, SIMD
 
 
 """
@@ -35,6 +36,11 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
         push!(plot_positions.val, arrays.neighborlist.positions_with_pbc[i])
     end
 
+    vertices = Observable(SVector{2, Float64}[])
+    for i in 1:length(arrays.neighborlist.voronoi_vertices)
+        push!(vertices.val, arrays.neighborlist.voronoi_vertices[i])
+    end
+
     plot_voronoi_edges = Observable(Tuple{SVector{2, Float64}, SVector{2, Float64}}[])
 
     linesegs2 = Tuple{SVector{2, Float64}, SVector{2, Float64}}[]
@@ -59,8 +65,10 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
     fig = Figure(size=(1000,1000))
     ax1 = Axis(fig[1:3, 1], title="configuration", limits=(-5, Lx+5, -5, Ly+5), xlabel="x", ylabel="y")
     scatter!(ax1, plot_positions, markersize=12, color =:blue)
-    linesegments!(ax1, plot_voronoi_edges, color=:black, linewidth=0.5)
+    text!(ax1, plot_positions, text = string.(1:length(arrays.positions)))
 
+    linesegments!(ax1, plot_voronoi_edges, color=:black, linewidth=0.5)
+    text!(ax1, vertices, text = string.(1:length(vertices[])), color=:red, align = (:left, :bottom), fontsize=8)
     linesegments!(ax1, [
         (0, 0), (Lx, 0),
         (Lx, 0), (Lx, Ly),
@@ -70,10 +78,11 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
     
     display(fig)
 
-    function visualize(parameters, arrays, output)
-       
-        if !(output.steps_done % plot_frequency == 0) 
-            return
+    function visualize(parameters, arrays, output; do_anyway=false)
+        if !do_anyway
+            if !(output.steps_done % plot_frequency == 0) 
+                return
+            end
         end
 
         if SelfPropelledVoronoi.verify_tessellation(parameters, arrays, output) == false
@@ -84,6 +93,7 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
         println("Visualizing step $(output.steps_done)")
 
         plot_positions[] = SVector.(arrays.neighborlist.positions_with_pbc[1:arrays.neighborlist.N_positions_with_pbc])
+        vertices[] = SVector.(arrays.neighborlist.voronoi_vertices)
         # draw voronoi edges
         linesegs2 = Tuple{SVector{2, Float64}, SVector{2, Float64}}[]
         for particle_i in 1:arrays.neighborlist.N_positions_with_pbc
@@ -102,10 +112,14 @@ function create_visualization_callback(arrays,  plot_frequency, dt, box)
 
     end
 
-    return (parameters, arrays, output) -> visualize(parameters, arrays, output)
+    return (parameters, arrays, output; do_anyway=false) -> visualize(parameters, arrays, output; do_anyway=do_anyway)
 end
 
-N = 400
+
+
+
+
+N = 50
 rho = 1.0
 L = sqrt(N/rho)
 Lx = L
@@ -116,7 +130,7 @@ pbc_layer_depth = 3.5
 # Create a box
 box = SimulationBox(Lx, Ly)
 # Create a VoronoiCells object
-target_perimeters = 3.5ones(N)
+target_perimeters = 4.0ones(N)
 target_areas = ones(N)
 K_P = ones(N)
 K_A = ones(N)
@@ -137,17 +151,20 @@ frictionconstant = 1.0
 random_seed = 564574564
 Random.seed!(random_seed)
 dump_info = DumpInfo(
-    save=false,
+    save=true,
     filename="Data/dump_$(random_seed).h5",
-    when_to_save_array=0:1000:1000000,
+    when_to_save_array=0:1000:10000000,
 )
 
 rng = Random.MersenneTwister(random_seed)
 verbose=true
+cb = function (x...)
+    return nothing 
+end
 parameter_struct = ParameterStruct(N = N, dt = dt, 
     kBT = kBT, frictionconstant = frictionconstant, 
     periodic_boundary_layer_depth = pbc_layer_depth, verbose = verbose, box = box, particles= voronoi_cells,
-    dump_info = dump_info, callback = (x...) -> nothing, RNG = rng)
+    dump_info = dump_info, callback = cb, RNG = rng)
 
 
 # Create an ArrayStruct object
@@ -165,9 +182,10 @@ output = Output()
 arrays.neighborlist.check_tessellation = true
 # Run the simulation
 
-Nsteps = 10
+Nsteps = 10000
+dt = 0.0001
 run_simulation!(parameter_struct, arrays, output, Nsteps)
-visualize = create_visualization_callback(arrays, 100, dt, box)
+visualize = create_visualization_callback(arrays, round(Int, 0.1/dt), dt, box)
 
 # with a visualization callback
 parameter_struct2 = ParameterStruct(N = N, dt = dt, 
@@ -175,7 +193,6 @@ parameter_struct2 = ParameterStruct(N = N, dt = dt,
     periodic_boundary_layer_depth = pbc_layer_depth, verbose = verbose, box = box, particles= voronoi_cells,
     dump_info = dump_info, callback = visualize, RNG = rng)
 
-Nsteps = 100000
-@profview @time  run_simulation!(parameter_struct2, arrays, output, Nsteps) # 4.54 - 4.73 seconds (35.37 M allocations: 2.616 GiB, 8.61% gc time)
+Nsteps = 10000
+@time @profview run_simulation!(parameter_struct2, arrays, output, Nsteps) # 4.54 - 4.73 seconds (35.37 M allocations: 2.616 GiB, 8.61% gc time)
 
-@show sum(arrays.positions) .- [4014.0155646974695, 4018.0113204639847]

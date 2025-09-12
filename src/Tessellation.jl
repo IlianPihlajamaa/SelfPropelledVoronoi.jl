@@ -265,7 +265,6 @@ function verify_tessellation(parameters, arrays, output)
         return false
     end
 
-    epsilon = 1e-9
     old_used = view(arrays.neighborlist.position_indices, 1:arrays.neighborlist.N_positions_with_pbc)
     update_positions_with_pbcs!(parameters, arrays, output)
     new_used = view(arrays.neighborlist.position_indices, 1:arrays.neighborlist.N_positions_with_pbc)
@@ -318,7 +317,7 @@ function verify_tessellation(parameters, arrays, output)
                 dist_sq = norm2(pos_particle - C)
 
                 # Check if this particle is inside the circumcircle
-                if dist_sq < R_sq - epsilon
+                if dist_sq < R_sq
                     # If it is, we have a violation of the tessellation
                     return false
                 end
