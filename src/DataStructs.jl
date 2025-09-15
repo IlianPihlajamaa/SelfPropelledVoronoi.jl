@@ -255,7 +255,7 @@ Type parameters:
 - `RNG::Random.MersenneTwister`: An instance of a random number generator (specifically `MersenneTwister`) used for stochastic processes in the simulation.
 - `seed::Int64`: The seed value used to initialize the random number generator, stored for reproducibility.
 """
-mutable struct ParameterStruct{P<:Particles, CB}
+mutable struct ParameterStruct{P<:Particles, CB, RNG, RNGseed}
     N::Int
     dt::Float64
     kBT::Float64
@@ -266,8 +266,8 @@ mutable struct ParameterStruct{P<:Particles, CB}
     particles::P
     dump_info::DumpInfo
     callback::CB
-    RNG::Random.MersenneTwister
-    seed::Int64
+    RNG::RNG
+    seed::RNGseed
     function ParameterStruct(;
         N::Int=100,
         dt::Float64=0.01,
@@ -288,7 +288,7 @@ mutable struct ParameterStruct{P<:Particles, CB}
         callback=x->nothing,  # Default callback does nothing
         RNG::Random.MersenneTwister=Random.MersenneTwister(1234),
     ) 
-        return new{typeof(particles), typeof(callback)}(
+        return new{typeof(particles), typeof(callback), typeof(RNG), typeof(RNG.seed)}(
             N,
             dt,
             kBT,
@@ -300,7 +300,7 @@ mutable struct ParameterStruct{P<:Particles, CB}
             dump_info,
             callback,
             RNG, 
-            Int(RNG.seed)
+            RNG.seed
         )
     end
         
