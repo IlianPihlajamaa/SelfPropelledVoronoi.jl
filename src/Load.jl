@@ -29,6 +29,10 @@ function load_simulation_state(filename::String)
 
         # RNG and callback: Using defaults
         rng = Random.MersenneTwister()
+        if "seed" in keys(params_group)
+            seed = read(params_group["seed"])
+            Random.seed!(rng, seed)
+        end
         callback = nothing
 
         parameter_struct = ParameterStruct(
@@ -125,6 +129,10 @@ function load_trajectory(filename::String)
         
         dump_info = DumpInfo(filename=filename) # Using defaults
         rng = Random.MersenneTwister()
+        if "seed" in keys(params_group)
+            seed = read(params_group["seed"])
+            Random.seed!(rng, seed)
+        end
         callback = nothing
 
         parameter_struct = ParameterStruct(

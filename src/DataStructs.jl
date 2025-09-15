@@ -287,8 +287,9 @@ mutable struct ParameterStruct{P<:Particles, CB, RNG, RNGseed}
         dump_info::DumpInfo=DumpInfo(),
         callback=x->nothing,  # Default callback does nothing
         RNG::Random.MersenneTwister=Random.MersenneTwister(1234),
+        seed=1234
     ) 
-        return new{typeof(particles), typeof(callback), typeof(RNG), typeof(RNG.seed)}(
+        return new{typeof(particles), typeof(callback), typeof(RNG), typeof(seed)}(
             N,
             dt,
             kBT,
@@ -300,7 +301,7 @@ mutable struct ParameterStruct{P<:Particles, CB, RNG, RNGseed}
             dump_info,
             callback,
             RNG, 
-            RNG.seed
+            seed
         )
     end
         
